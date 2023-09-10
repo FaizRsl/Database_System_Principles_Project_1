@@ -7,7 +7,6 @@
 #include <filesystem>
 
 std::vector<GameData> databaseStorage::getDatabaseRecord(){
-    //need to change to your own absolute path cos im not sure how to set it to work with every1 pc
     string pathtofile = std::filesystem::current_path().parent_path().string() + "\\games.txt";
     std::ifstream inputFile(pathtofile);
     if (!inputFile.is_open()) {
