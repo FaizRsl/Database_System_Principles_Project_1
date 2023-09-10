@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
+#include <filesystem>
 #include "Database.h"
 
 using namespace std;
@@ -11,7 +12,7 @@ int main() {
     const unsigned int blockSize = 400;
     // Using disk capacity of 100MB
     unsigned int diskSize = 100;
-    string resultsDir = "D:\\Desktop Folder\\NTU\\Year3 Sem1\\Database System Principles\\Projects\\Project1\\outputs\\";
+    string resultsDir = std::filesystem::current_path().parent_path().string() + "\\outputs\\";
     db = new Database(diskSize, blockSize);
 
     ofstream exp1Output;
