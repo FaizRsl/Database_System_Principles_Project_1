@@ -1,0 +1,7 @@
+Parameter n of the B+ Tree: 17
+Number of nodes (excluding overflow): 11
+Number of overflow nodes: 1612
+Total Number of nodes (including overflow): 1623
+Number of levels of the B+ tree: 2
+Root: 
+ |     74 |     83 |     92 |    102 |    112 |    122 |    132 |    141 |    150 |        |        |        |        |        |        |        |        | 
