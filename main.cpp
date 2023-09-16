@@ -82,7 +82,19 @@ int main() {
                 db->bPlusTree->printTree(test);
                 test.close();
 
+            case 4:
+                cout << "Experiment 4:" << endl;
+                //Write output to file
+                exp4Output.open(resultsDir + "experiment4output.txt");
+                db->bPlusTree->findRecord(0.6, 0.1, exp4Output);
+                //print to screen
+                cout << "Retrieve movies with 'FG_PCT_HOME' from 0.6 to 1 " << endl;
+                cout << db->bPlusTree->findRecord(0.6, 0.1, exp4Output) << endl;
+                exp4Output.close();
+                cout << endl << endl;
+                break;
 
+                
         }
     }
 
