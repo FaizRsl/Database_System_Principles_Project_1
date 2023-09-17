@@ -7,6 +7,7 @@
 
 using namespace std;
 
+#pragma pack(1)
 struct GameData {
     unsigned short recordID; //2
     time_t GAME_DATE_EST; //8
