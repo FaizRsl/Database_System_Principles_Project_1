@@ -12,7 +12,7 @@ int main() {
     const unsigned int blockSize = 400;
     // Using disk capacity of 100MB
     unsigned int diskSize = 100;
-    string resultsDir = std::filesystem::current_path().parent_path().string() + "\\outputs\\";
+    string resultsDir = filesystem::current_path().parent_path().string() + "\\outputs\\";
     db = new Database(diskSize, blockSize);
 
     ofstream exp1Output;
@@ -54,7 +54,7 @@ int main() {
                 cout << endl << endl;
                 break;
             case 2:
-                cout << "Experiment 2:" <<endl;
+                /*cout << "Experiment 2:" <<endl;
                 exp2Output.open(resultsDir + "experiment2output.txt");
 
                 exp2Output << "Parameter n of the B+ Tree: " << db->bPlusTree->maxKeys << "\n";
@@ -74,14 +74,16 @@ int main() {
                 exp2Output << "Root: \n";
                 db->bPlusTree->printIndexBlock(db->bPlusTree->root, exp2Output);
                 exp2Output.close();
-                cout << endl << endl;
+                cout << endl << endl;*/
                 break;
             case 3:
-                cout << "test" << endl;
+                /*cout << "test" << endl;
                 test.open(resultsDir + "test.txt");
                 db->bPlusTree->printTree(test);
-                test.close();
-
+                test.close();*/
+                break;
+            default:
+                break;
 
         }
     }
