@@ -3,10 +3,13 @@
 
 
 #include <string>
+#include <iostream>
+
+using namespace std;
 
 struct GameData {
     unsigned int recordID;
-    std::string GAME_DATE_EST;
+    string GAME_DATE_EST;
     int TEAM_ID_home;
     int PTS_home;
     double FG_PCT_home;
