@@ -98,10 +98,11 @@ std::vector<GameData> databaseStorage::getDatabaseRecord(){
 //    cout << "size of float:" << sizeof(float) << endl;
 
 
-    // For example, you can access the data for the first game as follows:
-    GameData firstGame = gameDataList[0];
-    std::size_t dataSize = sizeof(firstGame);
-    std::cout << "Size of GameData object: " << dataSize << " bytes" << std::endl;
+    // For example, you can access the data for the first game as follows: 
+    // not sure why the below 3 lines weren't in comments. remove if needed
+    //GameData firstGame = gameDataList[0];
+    //std::size_t dataSize = sizeof(firstGame);
+    //std::cout << "Size of GameData object: " << dataSize << " bytes" << std::endl;
 
     //std::cout << "GAME_DATE_EST: " << firstGame.GAME_DATE_EST << std::endl;
     //std::cout << "TEAM_ID_home: " << firstGame.TEAM_ID_home << std::endl;

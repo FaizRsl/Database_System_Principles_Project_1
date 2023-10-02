@@ -54,7 +54,7 @@ int main() {
                 cout << endl << endl;
                 break;
             case 2:
-                /*cout << "Experiment 2:" <<endl;
+                cout << "Experiment 2:" <<endl;
                 exp2Output.open(resultsDir + "experiment2output.txt");
 
                 exp2Output << "Parameter n of the B+ Tree: " << db->bPlusTree->maxKeys << "\n";
@@ -74,15 +74,16 @@ int main() {
                 exp2Output << "Root: \n";
                 db->bPlusTree->printIndexBlock(db->bPlusTree->root, exp2Output);
                 exp2Output.close();
-                cout << endl << endl;*/
+                cout << endl << endl;
                 break;
             case 3:
-                /*cout << "test" << endl;
+                cout << "test" << endl;
                 test.open(resultsDir + "test.txt");
                 db->bPlusTree->printTree(test);
                 test.close();
+                break;
 
-            case 4:
+            /*case 4:
                 cout << "Experiment 4:" << endl;
                 //Write output to file
                 exp4Output.open(resultsDir + "experiment4output.txt");
@@ -92,9 +93,13 @@ int main() {
                 cout << db->bPlusTree->findRecord(0.6, 0.1, exp4Output) << endl;
                 exp4Output.close();
                 cout << endl << endl;
-                test.close();*/
-                break;
+                test.close();
+                break;*/
+            case 6:
+                cout << "Exiting program..." << endl;
+                exit(0);
             default:
+                cout << "Invalid input. Please try again." << endl;
                 break;
 
                 
