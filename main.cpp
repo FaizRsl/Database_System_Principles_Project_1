@@ -24,6 +24,8 @@ int main() {
 
     int choice;
 
+    db->importData();
+
     while(1){
         cout << "1) Run Experiment 1\n"
                 "2) Run Experiment 2\n"
@@ -38,7 +40,6 @@ int main() {
             case 1:
                 cout << "Experiment 1:" <<endl;
                 exp1Output.open(resultsDir + "experiment1output.txt");
-                db->importData();
                 // Write output to file
                 exp1Output << "Number of records: " << db->numRecords << endl;
                 exp1Output << "Size of a record: " << (sizeof(GameData)) << "-Byte" << endl;
@@ -46,12 +47,11 @@ int main() {
                 exp1Output << "Number of blocks for storing the data: " << db->numBlocks << endl;
 
                 // print to screen
-                // cout << "Number of records: " <<  dbms->numRecords << endl; // Already printed when import data
+                cout << "Number of records: " <<  db->numRecords << endl;
                 cout << "Size of a record: " << (sizeof(GameData)) << "-Byte" << endl;
                 cout << "Number of records stored in a block: " << ceil((blockSize - sizeof(unsigned int))/ (sizeof(GameData) + sizeof(indexMapping))) << endl;
                 cout << "Number of blocks for storing the data: " << db->numBlocks << endl;
                 exp1Output.close();
-                cout << endl << endl;
                 break;
             case 2:
                 cout << "Experiment 2:" <<endl;
@@ -74,27 +74,37 @@ int main() {
                 exp2Output << "Root: \n";
                 db->bPlusTree->printIndexBlock(db->bPlusTree->root, exp2Output);
                 exp2Output.close();
-                cout << endl << endl;
                 break;
+
             case 3:
+                cout << "Experiment 3: " << endl;
+                exp3Output.open(resultsDir + "experiment3output.txt");
+                cout << "Retrieve movies with 'FG_PCT_HOME' equal to 0.5" << endl;
+
+                db->bPlusTree->findRecord(0.5, 0.5, exp3Output);
+                
+                break;
+
+            case 5: //test case for temporary
                 cout << "test" << endl;
                 test.open(resultsDir + "test.txt");
                 db->bPlusTree->printTree(test);
                 test.close();
                 break;
 
-            /*case 4:
+            case 4:
                 cout << "Experiment 4:" << endl;
                 //Write output to file
                 exp4Output.open(resultsDir + "experiment4output.txt");
                 db->bPlusTree->findRecord(0.6, 0.1, exp4Output);
                 //print to screen
-                cout << "Retrieve movies with 'FG_PCT_HOME' from 0.6 to 1 " << endl;
-                cout << db->bPlusTree->findRecord(0.6, 0.1, exp4Output) << endl;
+                cout << "Retrieve movies with 'FG_PCT_HOME' from 0.6 to 1" << "\n";
+                //cout << db->bPlusTree->findRecord(0.6, 0.1, exp4Output) << "\n";
+                //debug this
                 exp4Output.close();
                 cout << endl << endl;
                 test.close();
-                break;*/
+                break;
             case 6:
                 cout << "Exiting program..." << endl;
                 exit(0);

@@ -74,7 +74,7 @@ int BPlusTree::printIndexBlock(void* node, ofstream &output) {
 
 
 // Queries a record/range of keys that is selected by the user
-// This may return multiple pointerBlockPaires due to the possibility of multiple records having same key value of numVotes
+// This may return multiple pointerBlockPairs due to the possibility of multiple records having same key value of numVotes
 // For querying of single value, set numVotesStart and numVotesEnd to both be the value
 // Calls findNode() to locate the appropiate leaf node
 list<pointerBlockPair> BPlusTree::findRecord(unsigned int numVotesStart, unsigned int numVotesEnd, ofstream &output) {
@@ -82,6 +82,7 @@ list<pointerBlockPair> BPlusTree::findRecord(unsigned int numVotesStart, unsigne
     numIndexAccessed = 0;
     numOverflowNodesAccessed = 0;
 
+    //Create a new list called results to return the findings of findRecord
     list<pointerBlockPair> results;
     void* currNode = findNode(numVotesStart, root, 0, output, false);
 
@@ -197,8 +198,8 @@ void BPlusTree::insertRecord(unsigned int points_home, pointerBlockPair record) 
 
     // Check if there will be duplicate keys after the new record is inserted
 
-    // Case 1: Duplicate key detected in the B+ tree
-    for (int i = 0; i <= numKeys-1; i++) {
+    // CASE 1: Duplicate key detected in the B+ tree
+    for (int i = 0; i <= numKeys -1 ; i++) {
         if (points_home == points_homeArr[i]){
             // first check if the key alr has a overflow node
             void* overflowNode;
@@ -206,7 +207,7 @@ void BPlusTree::insertRecord(unsigned int points_home, pointerBlockPair record) 
             unsigned int* points_homeArrO;
             unsigned int* numKeysO;
 
-            if (ptrArr[i].recordID == -1) { //An overflowNode already exists
+            if (ptrArr[i].recordID == -1) { // if overflowNode already exists, add on to it
                 overflowNode = ptrArr[i].blockAddress;
                 ptrArrO = (pointerBlockPair*) (((NodeHeader*) overflowNode ) + 1 );
 
@@ -265,13 +266,13 @@ void BPlusTree::insertRecord(unsigned int points_home, pointerBlockPair record) 
         }
     }
 
-    // Case 2: Unique key, but number of keys after insertion to node exceeds max number of keys allowed
+    // CASE 2: Unique key, but number of keys after insertion to node exceeds max number of keys allowed
     if (numKeys == maxKeys){
         splitLeafNode(points_home, record, nodeToInsertAt, ptrArr, points_homeArr);
         return;
     }
 
-    // Case 3: Unique key, and node has sufficient space to hold new key
+    // CASE 3: Unique key, and node has sufficient space to hold new key
     int i;
     for (i = 0; i <= numKeys-1; i++) { //Find position within node to insert key
         if (points_home < points_homeArr[i]){

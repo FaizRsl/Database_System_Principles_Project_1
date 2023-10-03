@@ -25,26 +25,17 @@ void Database::importData(){
 
     databaseStorage dbStorage;
     vector<GameData> data = dbStorage.getDatabaseRecord();
-    //cout << "Size array of records: " << gameDataList.size() << endl;
-    cout << "Size: " << data.size() << endl;
-
     this->numRecords = 0;
     // Loop over the data and insert all the movie records
-    for (auto gamedata_address = data.begin();
-         gamedata_address != data.end();
-         ++gamedata_address)
+    for (auto gamedata_address = data.begin(); gamedata_address != data.end(); ++gamedata_address)
     {
         insertRecord(*gamedata_address);
         this->numRecords++;
-        if (this->numRecords % 10000 == 0){ // Update user for each 10,000 records entered
-            cout << "Number of records inserted thus far: " << this->numRecords << endl;
-        }
-    }
-    cout << "\n============\n"
-            "Total number of records inserted: " << this->numRecords << endl;
+    } //close for loop
+    cout << "Data has been successfully imported" << endl;
 
 
-}
+} //close function
 
 // Inserts a movieRecord and updates the B+ Tree
 void Database::insertRecord(GameData gameData)
@@ -109,7 +100,7 @@ void Database::insertRecord(GameData gameData)
     (*numRecords)++;
 
     // Update B+ Tree with new record inserted
-    bPlusTree->insertRecord(gameData.PTS_home, {blockAddress, (int) gameData.recordID});
+    bPlusTree->insertRecord(gameData.FG_PCT_home, {blockAddress, (int) gameData.recordID});
 
     // Remove block from list of freeblocks if updated block cannot hold any more records
     if (*numRecords == MAX_RECORDS && numGravestones == 0)
