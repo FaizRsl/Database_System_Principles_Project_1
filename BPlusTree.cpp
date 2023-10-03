@@ -1,4 +1,6 @@
 #include "BPlusTree.h"
+#include <iomanip>
+#include <cmath>
 
 BPlusTree::BPlusTree(unsigned int nodeSize) {
     numNodes = 0;
@@ -37,7 +39,7 @@ void* BPlusTree::getNewNode(bool isLeaf, bool isOverflow) {
     // Initialise last pointer to null
     // Required for leaf nodes in case it is the last leaf node
     pointerBlockPair* ptrArr = (pointerBlockPair*) (((NodeHeader*) addr ) + 1 );
-    unsigned int* numVotesArr = (unsigned int*) (ptrArr + maxKeys + 1);
+    float* pointsHomeArr = (float*) (ptrArr + maxKeys + 1);
     ptrArr[maxKeys] = {nullptr, -1};
 
     // Incrementing number of nodes created for the B+ Tree
@@ -46,13 +48,12 @@ void* BPlusTree::getNewNode(bool isLeaf, bool isOverflow) {
     return addr;
 }
 
-
 // Print the contents of a specific index block in the B+ Tree
 // Used for experiments
 int BPlusTree::printIndexBlock(void* node, ofstream &output) {
     int numKeys = *(unsigned int*)node;
     pointerBlockPair* ptrArr = (pointerBlockPair*) (((NodeHeader*) node ) + 1 );
-    unsigned int* numVotesArr = (unsigned int*) (ptrArr + maxKeys + 1);
+    float* numVotesArr = (float*) (ptrArr + maxKeys + 1);
 
     cout << " | ";
     if (output.is_open())
@@ -60,7 +61,7 @@ int BPlusTree::printIndexBlock(void* node, ofstream &output) {
     char toPrint[24];
     for (int i=0; i<maxKeys; i++) {
         if (i < numKeys) {
-            snprintf(toPrint, 24, "%6u | ", numVotesArr[i]);
+            snprintf(toPrint, 24, "%4f | ", numVotesArr[i]);
         } else {
             snprintf(toPrint, 24, "%6s | ", "   ");
         }
@@ -73,11 +74,13 @@ int BPlusTree::printIndexBlock(void* node, ofstream &output) {
 }
 
 
+
+
 // Queries a record/range of keys that is selected by the user
 // This may return multiple pointerBlockPairs due to the possibility of multiple records having same key value of numVotes
 // For querying of single value, set numVotesStart and numVotesEnd to both be the value
 // Calls findNode() to locate the appropiate leaf node
-list<pointerBlockPair> BPlusTree::findRecord(unsigned int numVotesStart, unsigned int numVotesEnd, ofstream &output) {
+list<pointerBlockPair> BPlusTree::findRecord(float numVotesStart, float numVotesEnd, ofstream &output) {
 
     numIndexAccessed = 0;
     numOverflowNodesAccessed = 0;
@@ -85,10 +88,9 @@ list<pointerBlockPair> BPlusTree::findRecord(unsigned int numVotesStart, unsigne
     //Create a new list called results to return the findings of findRecord
     list<pointerBlockPair> results;
     void* currNode = findNode(numVotesStart, root, 0, output, false);
-
     unsigned int numKeys = *(unsigned int *)currNode;
     pointerBlockPair* ptrArr = (pointerBlockPair*) (((NodeHeader*) currNode ) + 1 );
-    unsigned int* numVotesArr = (unsigned int*) (ptrArr + maxKeys + 1);
+    float* numVotesArr = (float*) (ptrArr + maxKeys + 1);
 
     int i = 0;
 
@@ -121,7 +123,7 @@ list<pointerBlockPair> BPlusTree::findRecord(unsigned int numVotesStart, unsigne
 
             // Reset the search to start of the next leaf node
             ptrArr = (pointerBlockPair*) (((NodeHeader*)  currNode ) + 1 );
-            numVotesArr = (unsigned int*) (ptrArr + maxKeys + 1);
+            numVotesArr = (float*) (ptrArr + maxKeys + 1);
             numKeys = *(unsigned int *)currNode;
             i = 0;
             continue;
@@ -145,7 +147,7 @@ list<pointerBlockPair> BPlusTree::findRecord(unsigned int numVotesStart, unsigne
 // Starts from the root node and recursively calls findNode() every time it goes down a level
 // Terminating condition occurs when a leaf node is reached
 // This DOES NOT mean that the key is definitely present in the node, iteration through the node still needs to be done
-void* BPlusTree::findNode(unsigned int numVotes, void* node, unsigned int currHeight, ofstream &output, bool willPrint) {
+void* BPlusTree::findNode(float points_home , void* node, unsigned int currHeight, ofstream &output, bool willPrint) {
 
     numIndexAccessed++;
 
@@ -164,17 +166,17 @@ void* BPlusTree::findNode(unsigned int numVotes, void* node, unsigned int currHe
     }
 
     pointerBlockPair* ptrArr = (pointerBlockPair*) (((NodeHeader*) node ) + 1 );
-    unsigned int* numVotesArr = (unsigned int*) (ptrArr + maxKeys + 1);
+    float* pointsHomeArr = (float*) (ptrArr + maxKeys + 1);
     unsigned int numKeys = *((unsigned int*) node);
 
     for (int i = 0; i <= numKeys - 1; i++) {
-        if (numVotes < numVotesArr[i]) {
-            return findNode(numVotes, ptrArr[i].blockAddress, ++currHeight, output, willPrint); // Search into pointer left of current index
+        if (points_home < pointsHomeArr[i]) {
+            return findNode(points_home, ptrArr[i].blockAddress, ++currHeight, output, willPrint); // Search into pointer left of current index
         } else {
             if (i != numKeys - 1) {
                 continue; // compare with next numVotes if the last numVotes has not been reached
             } else {
-                return findNode(numVotes, ptrArr[i+1].blockAddress, ++currHeight, output, willPrint); // Search into pointer right of last numVotes
+                return findNode(points_home, ptrArr[i+1].blockAddress, ++currHeight, output, willPrint); // Search into pointer right of last numVotes
             }
         }
     }
@@ -187,14 +189,18 @@ void* BPlusTree::findNode(unsigned int numVotes, void* node, unsigned int currHe
 // Accounts for duplicate keys and creates overflow nodes to hold duplicate keys if required
 // Leaf nodes will only hold unique key values, which may have pointers to overflow nodes if multiple records have the same index
 // Calls splitLeafNode() if number of keys exceeds the maximum number of keys the leaf node can hold
-void BPlusTree::insertRecord(unsigned int points_home, pointerBlockPair record) {
+void BPlusTree::insertRecord(float points_home, pointerBlockPair record) {
 
+    count++;
+//    cout << "total count: " << count << " , ";
+//    cout << "points_home: " << points_home << endl;
     ofstream dummy;
     void* nodeToInsertAt = findNode(points_home, root, 0, dummy, true);
     int numKeys = *(unsigned int*)nodeToInsertAt;
-
     pointerBlockPair* ptrArr = (pointerBlockPair*) (((NodeHeader*) nodeToInsertAt ) + 1 );
-    unsigned int* points_homeArr = (unsigned int*) (ptrArr + maxKeys + 1);
+    pointerBlockPair* test = static_cast<pointerBlockPair*>(ptrArr);
+    GameData* node = static_cast<GameData*>(test->blockAddress);
+    float* points_homeArr = (float*) (ptrArr + maxKeys + 1);
 
     // Check if there will be duplicate keys after the new record is inserted
 
@@ -204,7 +210,7 @@ void BPlusTree::insertRecord(unsigned int points_home, pointerBlockPair record) 
             // first check if the key alr has a overflow node
             void* overflowNode;
             pointerBlockPair* ptrArrO;
-            unsigned int* points_homeArrO;
+            float* points_homeArrO;
             unsigned int* numKeysO;
 
             if (ptrArr[i].recordID == -1) { // if overflowNode already exists, add on to it
@@ -237,7 +243,7 @@ void BPlusTree::insertRecord(unsigned int points_home, pointerBlockPair record) 
                 }
 
                 // Perform insertion of key into the correct overflowNode
-                points_homeArrO = (unsigned int*) (ptrArrO + maxKeys + 1);
+                points_homeArrO = (float*) (ptrArrO + maxKeys + 1);
                 ptrArrO[posToInsert] = record;
                 points_homeArrO[posToInsert] = points_home;
 
@@ -245,7 +251,7 @@ void BPlusTree::insertRecord(unsigned int points_home, pointerBlockPair record) 
             } else {
                 overflowNode = getNewNode(true, true);
                 ptrArrO = (pointerBlockPair*) (((NodeHeader*) overflowNode ) + 1 );
-                points_homeArrO = (unsigned int*) (ptrArrO + maxKeys + 1);
+                points_homeArrO = (float*) (ptrArrO + maxKeys + 1);
                 numKeysO = (unsigned int*) overflowNode;
 
                 // set first key-ptr pair of overflow block to point to the existing key and its record
@@ -285,6 +291,9 @@ void BPlusTree::insertRecord(unsigned int points_home, pointerBlockPair record) 
     }
     points_homeArr[i] = points_home;
     ptrArr[i] = record;
+    for(int i=0; i<count; i++){
+        cout << "Record id for " << i << ": " << ptrArr[i].recordID << endl;
+    }
     (*(unsigned int*)nodeToInsertAt)++; //Increment number of records in leaf node
 }
 
@@ -293,18 +302,18 @@ void BPlusTree::insertRecord(unsigned int points_home, pointerBlockPair record) 
 // Accounts for deletion of key from both leaf and non-leaf nodes
 // Initial deleting of a key always starts from a leaf node
 // If merging was performed, deleteKey() may be called again in mergeNodes() for the parent node
-void BPlusTree::deleteKey(unsigned int numVotes, void* nodeToDeleteFrom) {
+void BPlusTree::deleteKey(float pointsHome, void* nodeToDeleteFrom) {
 
     unsigned int* numKeys = (unsigned int*)nodeToDeleteFrom;
     NodeHeader header = *(NodeHeader*) nodeToDeleteFrom;
     pointerBlockPair* ptrArr = (pointerBlockPair*) (((NodeHeader*) nodeToDeleteFrom ) + 1 );
-    unsigned int* numVotesArr = (unsigned int*) (ptrArr + maxKeys + 1);
+    float* pointsHomeArr = (float*) (ptrArr + maxKeys + 1);
 
     // Search for node for deletion of key
     bool keyExists = false;
     int i;
     for (i=0; i<*numKeys; i++) {
-        if (numVotesArr[i] == numVotes) {
+        if (pointsHomeArr[i] == pointsHome) {
             keyExists = true;
             break;
         }
@@ -312,7 +321,7 @@ void BPlusTree::deleteKey(unsigned int numVotes, void* nodeToDeleteFrom) {
 
     // If record does not exist, deletion cannot be done
     if (!keyExists) {
-        printf("Record with numVotes = %u doesn't exist!\n", numVotes);
+        printf("Record with numVotes = %u doesn't exist!\n", pointsHome);
         return;
     }
 
@@ -341,13 +350,13 @@ void BPlusTree::deleteKey(unsigned int numVotes, void* nodeToDeleteFrom) {
     // Perform deletion of key from node
     (*numKeys)--;
     if (i != maxKeys-1) { //If element to remove is not the last element
-        shiftElementsForward(numVotesArr, ptrArr, i, header.isLeaf);
+        shiftElementsForward(pointsHomeArr, ptrArr, i, header.isLeaf);
     }
 
     void* parentNode = ((NodeHeader*)nodeToDeleteFrom)->pointerToParent.blockAddress;
     int numKeysInParent = *(unsigned int*) parentNode;
     pointerBlockPair* ptrArrParent = (pointerBlockPair*) (((NodeHeader*) parentNode ) + 1 );
-    unsigned int* numVotesArrParent = (unsigned int*) (ptrArrParent + maxKeys + 1);
+    float* pointsHomeArrParent = (float*) (ptrArrParent + maxKeys + 1);
 
     // Check if the key to be deleted appears in any of its ancestors and find the node it is in
     // This will only occur if the key we are deleting is the smallest key in its index node
@@ -357,10 +366,10 @@ void BPlusTree::deleteKey(unsigned int numVotes, void* nodeToDeleteFrom) {
         while (recursiveParent != nullptr){
             int numKeysInRParent = *(unsigned int*) recursiveParent;
             pointerBlockPair* ptrArrRParent = (pointerBlockPair*) (((NodeHeader*) recursiveParent ) + 1 );
-            unsigned int* numVotesArrRParent = (unsigned int*) (ptrArrRParent + maxKeys + 1);
+            float* pointsHomeArrRParent = (float*) (ptrArrRParent + maxKeys + 1);
             for (int k = 0; k < numKeysInParent; k++){
-                if (numVotesArrRParent[k] == numVotes) {
-                    numVotesArrRParent[k] = numVotesArr[0];
+                if (pointsHomeArrRParent[k] == pointsHome) {
+                    pointsHomeArrRParent[k] = pointsHomeArr[0];
                     foundFlag = true;
                     break;
                 }
@@ -408,33 +417,33 @@ void BPlusTree::deleteKey(unsigned int numVotes, void* nodeToDeleteFrom) {
                 // Perform borrowing if there exists a sibling that allows for borrowing
                 if (sibling != nullptr){
                     pointerBlockPair* ptrArrSibling = (pointerBlockPair*) (((NodeHeader*) sibling ) + 1 );
-                    unsigned int* numVotesArrSibling = (unsigned int*) (ptrArrSibling + maxKeys + 1);
+                    float* pointsHomeArrSibling = (float*) (ptrArrSibling + maxKeys + 1);
                     if (borrowFromLeft){
 
                         // Borrow last key from left sibling
                         // Shift all elements in nodeToDeleteFrom to the right to make space for the new key
-                        shiftElementsBack(numVotesArr, ptrArr, 0, siblingHeader.isLeaf);
-                        numVotesArr[0] = numVotesArrSibling[(*siblingNumKeys)-1]; // Borrowing of key
+                        shiftElementsBack(pointsHomeArr, ptrArr, 0, siblingHeader.isLeaf);
+                        pointsHomeArr[0] = pointsHomeArrSibling[(*siblingNumKeys)-1]; // Borrowing of key
                         ptrArr[0] = ptrArrSibling[(*siblingNumKeys)-1];
                         (*siblingNumKeys)--;
                         (*numKeys)++;
 
                         //Update the index in parent node that leads to this node
-                        numVotesArrParent[ourPosInParent-1] = numVotesArr[0];
+                        pointsHomeArrParent[ourPosInParent-1] = pointsHomeArr[0];
                     } else {
 
                         // Borrow first key from right sibling
-                        numVotesArr[*numKeys] = numVotesArrSibling[0]; // Borrowing of key
+                        pointsHomeArr[*numKeys] = pointsHomeArrSibling[0]; // Borrowing of key
                         ptrArr[*numKeys] = ptrArrSibling[0];
                         (*numKeys)++;
 
                         // Shift all elements in right sibling to fill up space due to key borrowed
-                        shiftElementsForward(numVotesArrSibling, ptrArrSibling, 0, siblingHeader.isLeaf);
+                        shiftElementsForward(pointsHomeArrSibling, ptrArrSibling, 0, siblingHeader.isLeaf);
 
                         (*siblingNumKeys)--;
 
                         //update the index in parent node that leads to right sibling
-                        numVotesArrParent[ourPosInParent] = numVotesArrSibling[0];
+                        pointsHomeArrParent[ourPosInParent] = pointsHomeArrSibling[0];
                     }
 
                     // Borrowing from sibling, cannot be performed, to merge with sibling
@@ -467,18 +476,18 @@ void BPlusTree::deleteKey(unsigned int numVotes, void* nodeToDeleteFrom) {
 void BPlusTree::mergeNodes(void* leftNode, void* rightNode) {
 
     pointerBlockPair* ptrArrL = (pointerBlockPair*) (((NodeHeader*) leftNode ) + 1 );
-    unsigned int* numVotesArrL = (unsigned int*) (ptrArrL + maxKeys + 1);
+    float* pointsHomeArrL = (float*) (ptrArrL + maxKeys + 1);
 
     pointerBlockPair* ptrArrR = (pointerBlockPair*) (((NodeHeader*) rightNode ) + 1 );
-    unsigned int* numVotesArrR = (unsigned int*) (ptrArrR + maxKeys + 1);
+    float* pointsHomeArrR = (float*) (ptrArrR + maxKeys + 1);
 
-    unsigned int smallestRight = numVotesArrR[0];
+    float smallestRight = pointsHomeArrR[0];
     unsigned int* numKeysL = (unsigned int*)leftNode;
     unsigned int* numKeysR = (unsigned int*)rightNode;
 
     // For each item in the right node, append to the left node
     for (int i=0; i<*numKeysR; i++) {
-        numVotesArrL[*numKeysL+i] = numVotesArrR[i];
+        pointsHomeArrL[*numKeysL+i] = pointsHomeArrR[i];
         ptrArrL[*numKeysL+i] = ptrArrR[i];
     }
     *numKeysL += *numKeysR;
@@ -507,7 +516,7 @@ void BPlusTree::mergeNodes(void* leftNode, void* rightNode) {
 // New node will be to the right of the original node
 // Original node is now the left node
 // Calls updateParentNodeAfterSplit() to update keys in parent node
-void BPlusTree::splitLeafNode(unsigned int numVotes, pointerBlockPair record, void* nodeToSplit, pointerBlockPair* ptrArr, unsigned int* numVotesArr) {
+void BPlusTree::splitLeafNode(float points_home, pointerBlockPair record, void* nodeToSplit, pointerBlockPair* ptrArr, float* ptsHomeArr) {
 
     void* leftNode = nodeToSplit;
     void* rightNode = getNewNode(true, false); // Create new right node
@@ -522,25 +531,25 @@ void BPlusTree::splitLeafNode(unsigned int numVotes, pointerBlockPair record, vo
     bool newKeyInserted = false;
 
     for (int i = 0; i < maxKeys; i++) {
-        if (!newKeyInserted && numVotes < numVotesArr[i]){
-            tempNumVotesList.push_back(numVotes);
+        if (!newKeyInserted && points_home < ptsHomeArr[i]){
+            tempNumVotesList.push_back(points_home);
             tempPtrList.push_back(record);
             newKeyInserted = true;
         }
-        tempNumVotesList.push_back(numVotesArr[i]);
+        tempNumVotesList.push_back(ptsHomeArr[i]);
         tempPtrList.push_back(ptrArr[i]);
     }
-    if (numVotes > numVotesArr[maxKeys-1]){ // Runs when new numNodes is bigger than all keys
-        tempNumVotesList.push_back(numVotes);
+    if (points_home > ptsHomeArr[maxKeys-1]){ // Runs when new numNodes is bigger than all keys
+        tempNumVotesList.push_back(points_home);
         tempPtrList.push_back(record);
     }
 
     pointerBlockPair* ptrArrR = (pointerBlockPair*) (((NodeHeader*) rightNode ) + 1 );
-    unsigned int* numVotesArrR = (unsigned int*) (ptrArrR + maxKeys + 1);
+    float* pointsHomeArrR = (float*) (ptrArrR + maxKeys + 1);
 
     // Filling in keys for new left node
     for (int i = 0; i < numLeftKeys; i++) {
-        numVotesArr[i] = tempNumVotesList.front();
+        ptsHomeArr[i] = tempNumVotesList.front();
         ptrArr[i] = tempPtrList.front();
         tempNumVotesList.pop_front();
         tempPtrList.pop_front();
@@ -549,7 +558,7 @@ void BPlusTree::splitLeafNode(unsigned int numVotes, pointerBlockPair record, vo
 
     // Filling in keys for new right node
     for (int i = 0; i < numRightKeys; i ++) {
-        numVotesArrR[i] = tempNumVotesList.front();
+        pointsHomeArrR[i] = tempNumVotesList.front();
         ptrArrR[i] = tempPtrList.front();
         tempNumVotesList.pop_front();
         tempPtrList.pop_front();
@@ -562,7 +571,7 @@ void BPlusTree::splitLeafNode(unsigned int numVotes, pointerBlockPair record, vo
     ptrArrR[maxKeys].blockAddress = ptrArr[maxKeys].blockAddress;
     ptrArr[maxKeys].blockAddress = rightNode;
 
-    updateParentNodeAfterSplit(parentNode, rightNode, numVotesArrR[0]);
+    updateParentNodeAfterSplit(parentNode, rightNode, pointsHomeArrR[0]);
 
     return;
 }
@@ -572,53 +581,53 @@ void BPlusTree::splitLeafNode(unsigned int numVotes, pointerBlockPair record, vo
 // New node will be to the right of the original node
 // Original node is now the left node
 // Calls updateParentNodeAfterSplit() to update keys in parent node
-void BPlusTree::splitNonLeafNode(unsigned int numVotes, pointerBlockPair record, void* nodeToSplit, pointerBlockPair* ptrArr, unsigned int* numVotesArr) {
+void BPlusTree::splitNonLeafNode(float points_home, pointerBlockPair record, void* nodeToSplit, pointerBlockPair* ptrArr, float* ptsHomeArr) {
 
     void* leftNode = nodeToSplit;
     void* rightNode = getNewNode(false, false); // Create new right node
 
     list<pointerBlockPair> tempPtrList;
-    list<unsigned int> tempNumVotesList;
+    list<float> tempPointsHomeList;
     unsigned int numLeftKeys = ceil(maxKeys/2.0);
     unsigned int numRightKeys = floor(maxKeys/2.0);
     void* parentNode = ((NodeHeader*)nodeToSplit)->pointerToParent.blockAddress;
 
     // Copy existing keys into a temp list
     for (int i = 0; i < maxKeys; i++) {
-        tempNumVotesList.push_back(numVotesArr[i]);
+        tempPointsHomeList.push_back(ptsHomeArr[i]);
         tempPtrList.push_back(ptrArr[i]);
     }
     tempPtrList.push_back(ptrArr[maxKeys]);
 
     // Add in new key into the temp list in the correct position
     list<pointerBlockPair>::iterator ptrItr = tempPtrList.begin();
-    list<unsigned int>::iterator numVotesItr = tempNumVotesList.begin();
+    list<float>::iterator pointsHomeItr = tempPointsHomeList.begin();
     while (true) {
-        if (numVotes < *numVotesItr) {
-            tempNumVotesList.insert(numVotesItr, numVotes); // insert adds new element to front of current iteration
+        if (points_home < *pointsHomeItr) {
+            tempPointsHomeList.insert(pointsHomeItr, points_home); // insert adds new element to front of current iteration
             ptrItr++;
             tempPtrList.insert(ptrItr, record);
             break;
         }
-        if (numVotesItr == tempNumVotesList.end()) { // If index should be last element in node, just append to the back
-            tempNumVotesList.push_back(numVotes);
+        if (pointsHomeItr == tempPointsHomeList.end()) { // If index should be last element in node, just append to the back
+            tempPointsHomeList.push_back(points_home);
             tempPtrList.push_back(record);
             break;
         }
         ptrItr++;
-        numVotesItr++;
+        pointsHomeItr++;
     }
 
     pointerBlockPair* ptrArrR = (pointerBlockPair*) (((NodeHeader*) rightNode ) + 1 );
-    unsigned int* numVotesArrR = (unsigned int*) (ptrArrR + maxKeys + 1);
+    float* numVotesArrR = (float*) (ptrArrR + maxKeys + 1);
 
     // Filling in keys for new left node
     int i;
     for (i = 0; i < numLeftKeys; i++) {
-        numVotesArr[i] = tempNumVotesList.front();
+        ptsHomeArr[i] = tempPointsHomeList.front();
         ptrArr[i] = tempPtrList.front();
         ((NodeHeader*) ptrArr[i].blockAddress)->pointerToParent.blockAddress = leftNode; // update all children to point to leftNode as new parent
-        tempNumVotesList.pop_front();
+        tempPointsHomeList.pop_front();
         tempPtrList.pop_front();
     }
     ptrArr[i] = tempPtrList.front(); // node needs 1 more ptr than key
@@ -630,14 +639,14 @@ void BPlusTree::splitNonLeafNode(unsigned int numVotes, pointerBlockPair record,
     // Filling in keys for new right node
     // The key currently at front of the list will be the parent for both left and right nodes
     // Thus the key is popped out and passed into updateParentNodeAfterSplit later for promotion
-    unsigned int newParentKey = tempNumVotesList.front();
-    tempNumVotesList.pop_front();
+    float newParentKey = tempPointsHomeList.front();
+    tempPointsHomeList.pop_front();
 
     for (i = 0; i < numRightKeys; i++) {
-        numVotesArrR[i] = tempNumVotesList.front();
+        numVotesArrR[i] = tempPointsHomeList.front();
         ptrArrR[i] = tempPtrList.front();
         ((NodeHeader*) ptrArrR[i].blockAddress)->pointerToParent.blockAddress = rightNode; // update all children of right node to point to itself as new parent
-        tempNumVotesList.pop_front();
+        tempPointsHomeList.pop_front();
         tempPtrList.pop_front();
     }
     ptrArrR[numRightKeys] = tempPtrList.front(); // For non-leaf nodes, n keys requires (n+1) pointers, pop one more pointer
@@ -654,18 +663,18 @@ void BPlusTree::splitNonLeafNode(unsigned int numVotes, pointerBlockPair record,
 // Updates parent node after a split has been occured
 // Is called by either splitLeafNode() or splitNonLeafNode()
 // Can also call splitNonLeafNode() if the parent node ends up having insufficient number of keys
-void BPlusTree::updateParentNodeAfterSplit(void* parentNode, void* rightNode, unsigned int newKey) {
+void BPlusTree::updateParentNodeAfterSplit(void* parentNode, void* rightNode, float newKey) {
 
     //If root node is the node being split, we need to create a new root
     if (parentNode == nullptr) {
         void* newRootNode = getNewNode(false, false); // create a parent node (root)
 
         pointerBlockPair* ptrArrNew = (pointerBlockPair*) (((NodeHeader*) newRootNode ) + 1 );
-        unsigned int* numVotesArrNew = (unsigned int*) (ptrArrNew + maxKeys + 1);
+        float* pointsHomeArrNew = (float*) (ptrArrNew + maxKeys + 1);
 
         ptrArrNew[0].blockAddress = root; // old root node became the left node
         ptrArrNew[1].blockAddress = rightNode;
-        numVotesArrNew[0] = newKey; // only key in new root node is the smallest key of the right subtree
+        pointsHomeArrNew[0] = newKey; // only key in new root node is the smallest key of the right subtree
         (*((unsigned int*) newRootNode))++;
 
         // update parent of the new child nodes
@@ -685,7 +694,7 @@ void BPlusTree::updateParentNodeAfterSplit(void* parentNode, void* rightNode, un
 
         //Initialise ptrArr and numVotesArr to access pointer and key arrays
         pointerBlockPair* ptrArr = (pointerBlockPair*) (((NodeHeader*) parentNode ) + 1 );
-        unsigned int* numVotesArr = (unsigned int*) (ptrArr + maxKeys + 1);
+        float* numVotesArr = (float*) (ptrArr + maxKeys + 1);
 
         //parent node need to be split
         if (numKeys == maxKeys) {
@@ -716,16 +725,16 @@ void BPlusTree::updateParentNodeAfterSplit(void* parentNode, void* rightNode, un
 // Shift all keys forward by one space
 // Called by deleteKey() when borrowing elements
 // Also called by deleteKey() when deleting the first key from the node
-void BPlusTree::shiftElementsForward(unsigned int* numVotesArr, pointerBlockPair* ptrArr, int start, bool isLeaf) {
+void BPlusTree::shiftElementsForward(float* pointsHomeArr, pointerBlockPair* ptrArr, int start, bool isLeaf) {
 
     if (isLeaf) {
         for (int j = start; j < maxKeys-1; j++) { // stop shifting at i=maxKeys-2 since numVotesArr[maxKeys-1] is the last key
-            numVotesArr[j] = numVotesArr[j+1];
+            pointsHomeArr[j] = pointsHomeArr[j+1];
             ptrArr[j] = ptrArr[j+1];
         }
     } else {
         for (int j = start; j < maxKeys-1; j++) {
-            numVotesArr[j] = numVotesArr[j+1];
+            pointsHomeArr[j] = pointsHomeArr[j+1];
             ptrArr[j+1] = ptrArr[j+2]; //For non-leaf node, the j-th key correspond to the (j+1)th pointer
         }
     }
@@ -734,16 +743,16 @@ void BPlusTree::shiftElementsForward(unsigned int* numVotesArr, pointerBlockPair
 
 // Shift all keys backward by one space
 // Called by deleteKey() when borrowing elements
-void BPlusTree::shiftElementsBack(unsigned int* numVotesArr, pointerBlockPair* ptrArr, int end, bool isLeaf) {
+void BPlusTree::shiftElementsBack(float* pointsHomeArr, pointerBlockPair* ptrArr, int end, bool isLeaf) {
 
     if (isLeaf) {
         for (int j = maxKeys-1; j > end; j--) {
-            numVotesArr[j] = numVotesArr[j-1];
+            pointsHomeArr[j] = pointsHomeArr[j-1];
             ptrArr[j] = ptrArr[j-1];
         }
     } else {
         for (int j = maxKeys-1; j > end; j--) {
-            numVotesArr[j] = numVotesArr[j-1];
+            pointsHomeArr[j] = pointsHomeArr[j-1];
             ptrArr[j+1] = ptrArr[j];
         }
     }

@@ -9,7 +9,6 @@ using namespace std;
 
 #pragma pack(1)
 struct GameData {
-    unsigned short recordID; //2
     time_t GAME_DATE_EST; //8
     unsigned int TEAM_ID_home; //4
     unsigned short PTS_home; //2
@@ -23,14 +22,14 @@ struct GameData {
 
 struct indexMapping
 {
-    unsigned int recordID;
+    float key;
     int indexOfRecord; // -1 represents a deleted record in block
 };
 
 struct pointerBlockPair // 8 bytes
 {
     void* blockAddress;
-    int recordID; // -1 indicates an overflow, any positive indicates the a duplicated record
+    float recordID; // -1 indicates an overflow, any positive indicates the a duplicated record
 };
 
 // Used to store relevant header information for a node in the B+ tree
@@ -40,6 +39,7 @@ struct NodeHeader // 14->16 (padded) bytes, multiple of 4
     pointerBlockPair pointerToParent;
     bool isLeaf;
 };
+
 
 
 #endif //PROJECT1_PROJECTSTRUCTURE_H

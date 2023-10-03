@@ -72,7 +72,9 @@ int main() {
                 cout << "\n=====Content of root=====" << endl;
                 cout << "Root: \n";
                 exp2Output << "Root: \n";
-                db->bPlusTree->printIndexBlock(db->bPlusTree->root, exp2Output);
+                //db->bPlusTree->printIndexBlock(db->bPlusTree->root, exp2Output);
+                db->bPlusTree->printTree(exp2Output);
+                //db->printBPlusTree(exp2Output);
                 exp2Output.close();
                 break;
 
@@ -80,7 +82,6 @@ int main() {
                 cout << "Experiment 3: " << endl;
                 exp3Output.open(resultsDir + "experiment3output.txt");
                 cout << "Retrieve movies with 'FG_PCT_HOME' equal to 0.5" << endl;
-
                 db->bPlusTree->findRecord(0.5, 0.5, exp3Output);
                 
                 break;

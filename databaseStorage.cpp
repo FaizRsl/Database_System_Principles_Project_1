@@ -1,11 +1,13 @@
 #include "databaseStorage.h"
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <sstream>
 #include <vector>
 #include "ProjectStructure.h"
 #include <filesystem>
 #include <ctime>
+#include <cmath>
 
 using namespace std;
 
@@ -29,7 +31,7 @@ std::vector<GameData> databaseStorage::getDatabaseRecord(){
         std::istringstream iss(line);
         GameData gameData;
 
-        gameData.recordID = count;
+        //gameData.recordID = count;
         count++;
 
         string dateString;
@@ -65,6 +67,10 @@ std::vector<GameData> databaseStorage::getDatabaseRecord(){
             //std::cerr << "Error parsing line: " << line << std::endl;
             continue;
         }
+
+        //gameData.FG_PCT_home = round(gameData.FG_PCT_home * 1000) / 1000.0;
+        //gameData.FT_PCT_home = round(gameData.FT_PCT_home * 1000) / 1000.0;
+        //gameData.FG3_PCT_home = round(gameData.FG3_PCT_home * 1000) / 1000.0;
 
         /*cout << gameData.recordID << endl;
         cout << gameData.TEAM_ID_home << endl;

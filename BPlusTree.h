@@ -25,25 +25,27 @@ public:
     int numOverflowNodesAccessed;
     int numOverflowNodesDeleted;
 
+    int count = 0;
+
     //Initialisation and setting functions
     BPlusTree(unsigned int sizeOfNode);
     void* getNewNode(bool isLeaf, bool isOverflow);
 
     //Retrieval functions
-    list<pointerBlockPair> findRecord(unsigned int numVotesStart, unsigned int numVotesEnd, ofstream &output);
-    void* findNode(unsigned int numVotes, void* node, unsigned int currentHeight, ofstream &output, bool willPrint);
+    list<pointerBlockPair> findRecord(float pointsHomeStart, float pointsHomeEnd, ofstream &output);
+    void* findNode(float points_home, void* node, unsigned int currentHeight, ofstream &output, bool willPrint);
 
     //Functions for inserting a record
-    void insertRecord(unsigned int points_home, pointerBlockPair record);
-    void splitLeafNode(unsigned int numVotes, pointerBlockPair record, void* nodeToSplit, pointerBlockPair* ptrArr, unsigned int* numVotesArr);
-    void splitNonLeafNode(unsigned int numVotes, pointerBlockPair record, void* nodeToSplit, pointerBlockPair* ptrArr, unsigned int* numVotesArr);
-    void updateParentNodeAfterSplit(void* parentNode, void* rightNode, unsigned int newParentKey);
+    void insertRecord(float points_home, pointerBlockPair record);
+    void splitLeafNode(float points_home, pointerBlockPair record, void* nodeToSplit, pointerBlockPair* ptrArr, float* ptsHomeArr);
+    void splitNonLeafNode(float points_home, pointerBlockPair record, void* nodeToSplit, pointerBlockPair* ptrArr, float* ptsHomeArr);
+    void updateParentNodeAfterSplit(void* parentNode, void* rightNode, float newParentKey);
 
     //Functions for deleting a record
-    void deleteKey(unsigned int numVotes, void* nodeToDeleteFrom);
+    void deleteKey(float pointsHome, void* nodeToDeleteFrom);
     void mergeNodes(void* leftNode, void* rightNode);
-    void shiftElementsForward(unsigned int* numVotesArr, pointerBlockPair* ptrArr, int start, bool isLeaf);
-    void shiftElementsBack(unsigned int* numVotesArr, pointerBlockPair* ptrArr, int end, bool isLeaf);
+    void shiftElementsForward(float* pointsHomeArr, pointerBlockPair* ptrArr, int start, bool isLeaf);
+    void shiftElementsBack(float* pointsHomeArr, pointerBlockPair* ptrArr, int end, bool isLeaf);
 
     //Functions for Experiments/Visualization
     int printIndexBlock(void* node, ofstream &output);

@@ -35,8 +35,12 @@ public:
     void importData();
     void insertRecord(GameData gameData);
 
-    //Functions for Experiments/Visualization
+    /*//Functions for Experiments/Visualization
     void printDataBlock(void* block, ofstream &output);
+
+    //test
+    void printBPlusTree(ofstream& output);
+    void printBPlusTreeKeys(void* node, ofstream& output);*/
 };
 
 

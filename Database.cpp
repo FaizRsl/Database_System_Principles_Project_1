@@ -96,11 +96,11 @@ void Database::insertRecord(GameData gameData)
 
     // Insert record to disk
     *insertRecordPointer = gameData; // insert record data
-    *insertindexMappingPointer = {gameData.recordID, index}; // insert new indexMapping table entry
+    *insertindexMappingPointer = {gameData.FG_PCT_home, index}; // insert new indexMapping table entry
     (*numRecords)++;
 
     // Update B+ Tree with new record inserted
-    bPlusTree->insertRecord(gameData.FG_PCT_home, {blockAddress, (int) gameData.recordID});
+    bPlusTree->insertRecord(gameData.FG_PCT_home, {blockAddress, gameData.FG_PCT_home});
 
     // Remove block from list of freeblocks if updated block cannot hold any more records
     if (*numRecords == MAX_RECORDS && numGravestones == 0)
@@ -111,7 +111,8 @@ void Database::insertRecord(GameData gameData)
     return;
 }
 
-//Prints tconst values of records within data block, used for reporting statistics for experiments
+/*
+//Prints recordID values of records within data block, used for reporting statistics for experiments
 void Database::printDataBlock(void* block, ofstream &output) {
 
     int numRecords = *((unsigned int*) block);
@@ -123,7 +124,7 @@ void Database::printDataBlock(void* block, ofstream &output) {
     char toPrint[24];
     for (int i=0; i<MAX_RECORDS; i++) {
         if (i < numRecords) {
-            snprintf(toPrint, 24, "%12s | ", dataRecords[i].recordID);
+            snprintf(toPrint, 24, "%12s | ", dataRecords[i].FG_PCT_home);
         } else {
             snprintf(toPrint, 24, "%12s | ", "            ");
         }
@@ -134,4 +135,44 @@ void Database::printDataBlock(void* block, ofstream &output) {
     output << "\n";
 }
 
+void Database::printBPlusTreeKeys(void* node, ofstream& output)
+{
+    if (node == nullptr) {
+        return; // Base case: reached a null node
+    }
+
+    // Cast the node to NodeHeader to access its header information
+    NodeHeader* header = static_cast<NodeHeader*>(node);
+
+    // Check if the node is a leaf node
+    if (header->isLeaf) {
+        // If it's a leaf node, cast it to access its data
+        pointerBlockPair* ptrArr = static_cast<pointerBlockPair*>(node) + 1;
+        float* points_homeArr = reinterpret_cast<float*>(ptrArr + header->numKeys);
+
+        // Print all the keys in the leaf node
+        for (unsigned int i = 0; i < header->numKeys; i++) {
+            output << points_homeArr[i] << " ";
+        }
+    } else {
+        // If it's an internal node, traverse its children
+        pointerBlockPair* ptrArr = static_cast<pointerBlockPair*>(node) + 1;
+        for (unsigned int i = 0; i < header->numKeys; i++) {
+            // Recursively print keys from child nodes
+            printBPlusTreeKeys(ptrArr[i].blockAddress, output);
+        }
+    }
+}
+
+// Call this function to print all keys from the root of the B+ tree
+void Database::printBPlusTree(ofstream& output)
+{
+    if (bPlusTree == nullptr || bPlusTree->root == nullptr) {
+        output << "B+ Tree is empty." << endl;
+        return;
+    }
+
+    printBPlusTreeKeys(bPlusTree->root, output);
+}
+*/
 
