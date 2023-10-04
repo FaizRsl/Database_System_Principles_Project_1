@@ -12,7 +12,7 @@ int main() {
     const unsigned int blockSize = 400;
     // Using disk capacity of 100MB
     unsigned int diskSize = 100;
-    string resultsDir = filesystem::current_path().parent_path().string() + "\\outputs\\";
+    string resultsDir = filesystem::current_path().parent_path().string() + "//outputs//";
     db = new Database(diskSize, blockSize);
 
     ofstream exp1Output;
@@ -33,8 +33,18 @@ int main() {
                 "4) Run Experiment 4\n"
                 "5) Run Experiment 5\n"
                 "6) Exit program\n";
+        cout << "Enter your choice: ";
+        try {
+            cin >> choice;
+            if (cin.fail() || choice < 1 || choice > 6) {
+                throw runtime_error("Invalid choice. Please enter an integer from 1-6.");
+            }
+        } catch (const exception& e) {
+            cout << e.what() << endl;
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            continue;
 
-        cin >> choice;
 
         switch(choice){
             case 1:
@@ -53,6 +63,7 @@ int main() {
                 cout << "Number of blocks for storing the data: " << db->numBlocks << endl;
                 exp1Output.close();
                 break;
+
             case 2:
                 cout << "Experiment 2:" <<endl;
                 exp2Output.open(resultsDir + "experiment2output.txt");
@@ -83,14 +94,6 @@ int main() {
                 exp3Output.open(resultsDir + "experiment3output.txt");
                 cout << "Retrieve movies with 'FG_PCT_HOME' equal to 0.5" << endl;
                 db->bPlusTree->findRecord(0.5, 0.5, exp3Output);
-                
-                break;
-
-            case 5: //test case for temporary
-                cout << "test" << endl;
-                test.open(resultsDir + "test.txt");
-                db->bPlusTree->printTree(test);
-                test.close();
                 break;
 
             case 4:
@@ -106,11 +109,20 @@ int main() {
                 cout << endl << endl;
                 test.close();
                 break;
+
+            case 5: //test case for temporary
+                cout << "test" << endl;
+                test.open(resultsDir + "test.txt");
+                db->bPlusTree->printTree(test);
+                test.close();
+                break;
+
             case 6:
-                cout << "Exiting program..." << endl;
+                cout << "Terminating the program." << endl;
                 exit(0);
+
             default:
-                cout << "Invalid input. Please try again." << endl;
+                cout << "Invalid input. Please input a value between 1 to 6." << endl;
                 break;
 
                 

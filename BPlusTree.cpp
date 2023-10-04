@@ -279,22 +279,22 @@ void BPlusTree::insertRecord(float points_home, pointerBlockPair record) {
     }
 
     // CASE 3: Unique key, and node has sufficient space to hold new key
-    int i;
-    for (i = 0; i <= numKeys-1; i++) { //Find position within node to insert key
-        if (points_home < points_homeArr[i]){
-            for (int j = numKeys; j > i; j--) { // Shift current keys back to accomondate new key
-                points_homeArr[j] = points_homeArr[j-1];
-                ptrArr[j] = ptrArr[j-1];
-            }
-            break;
-        }
-    }
-    points_homeArr[i] = points_home;
-    ptrArr[i] = record;
-    for(int i=0; i<count; i++){
-        cout << "Record id for " << i << ": " << ptrArr[i].recordID << endl;
-    }
-    (*(unsigned int*)nodeToInsertAt)++; //Increment number of records in leaf node
+//    int i;
+//    for (i = 0; i <= numKeys-1; i++) { //Find position within node to insert key
+//        if (points_home < points_homeArr[i]){
+//            for (int j = numKeys; j > i; j--) { // Shift current keys back to accomondate new key
+//                points_homeArr[j] = points_homeArr[j-1];
+//                ptrArr[j] = ptrArr[j-1];
+//            }
+//            break;
+//        }
+//    }
+//    points_homeArr[i] = points_home;
+//    ptrArr[i] = record;
+//    for(int i=0; i<count; i++){
+//        cout << "Record id for " << i << ": " << ptrArr[i].recordID << endl;
+//    }
+//    (*(unsigned int*)nodeToInsertAt)++; //Increment number of records in leaf node
 }
 
 

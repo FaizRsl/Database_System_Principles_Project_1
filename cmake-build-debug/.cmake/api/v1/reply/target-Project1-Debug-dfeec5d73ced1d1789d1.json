@@ -2,10 +2,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "Project1.exe"
-		},
-		{
-			"path" : "Project1.pdb"
+			"path" : "Project1"
 		}
 	],
 	"backtrace" : 1,
@@ -38,7 +35,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-g -fdiagnostics-color=always"
+					"fragment" : "-g -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk -fcolor-diagnostics"
 				}
 			],
 			"language" : "CXX",
@@ -72,16 +69,12 @@
 			{
 				"fragment" : "",
 				"role" : "flags"
-			},
-			{
-				"fragment" : "-lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32",
-				"role" : "libraries"
 			}
 		],
 		"language" : "CXX"
 	},
 	"name" : "Project1",
-	"nameOnDisk" : "Project1.exe",
+	"nameOnDisk" : "Project1",
 	"paths" : 
 	{
 		"build" : ".",

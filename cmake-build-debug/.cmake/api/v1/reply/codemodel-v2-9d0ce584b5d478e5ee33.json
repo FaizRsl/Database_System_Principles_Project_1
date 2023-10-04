@@ -6,7 +6,7 @@
 			[
 				{
 					"build" : ".",
-					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
+					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.24"
@@ -39,7 +39,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "Project1::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-Project1-Debug-6bb9e6ab58d0f315ca87.json",
+					"jsonFile" : "target-Project1-Debug-dfeec5d73ced1d1789d1.json",
 					"name" : "Project1",
 					"projectIndex" : 0
 				}
@@ -49,12 +49,12 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "D:/Desktop Folder/NTU/Year3 Sem1/Database System Principles/Projects/ProjectOne/cmake-build-debug",
-		"source" : "D:/Desktop Folder/NTU/Year3 Sem1/Database System Principles/Projects/ProjectOne"
+		"build" : "/Users/anoushkanahata/Desktop/SC3020/Database_System_Principles_Project_1/cmake-build-debug",
+		"source" : "/Users/anoushkanahata/Desktop/SC3020/Database_System_Principles_Project_1"
 	},
 	"version" : 
 	{
 		"major" : 2,
-		"minor" : 4
+		"minor" : 5
 	}
 }
