@@ -41,9 +41,10 @@ int main() {
             }
         } catch (const exception& e) {
             cout << e.what() << endl;
-            cin.clear();
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
-            continue;
+            cin.clear(); // Clear the error flag
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Discard the invalid input
+            continue; // Skip the rest of the loop and prompt for input again
+        }
 
 
         switch(choice){
