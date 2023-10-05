@@ -53,7 +53,7 @@ void* BPlusTree::getNewNode(bool isLeaf, bool isOverflow) {
 int BPlusTree::printIndexBlock(void* node, ofstream &output) {
     int numKeys = *(unsigned int*)node;
     pointerBlockPair* ptrArr = (pointerBlockPair*) (((NodeHeader*) node ) + 1 );
-    float* numVotesArr = (float*) (ptrArr + maxKeys + 1);
+    float* pointsHomeArr = (float*) (ptrArr + maxKeys + 1);
 
     cout << " | ";
     if (output.is_open())
@@ -61,7 +61,7 @@ int BPlusTree::printIndexBlock(void* node, ofstream &output) {
     char toPrint[24];
     for (int i=0; i<maxKeys; i++) {
         if (i < numKeys) {
-            snprintf(toPrint, 24, "%4f | ", numVotesArr[i]);
+            snprintf(toPrint, 24, "%7f | ", pointsHomeArr[i]);
         } else {
             snprintf(toPrint, 24, "%6s | ", "   ");
         }
@@ -184,7 +184,6 @@ void* BPlusTree::findNode(float points_home , void* node, unsigned int currHeigh
     return nullptr;
 }
 
-
 // Inserts a key into the B+ Tree if it exists
 // Accounts for duplicate keys and creates overflow nodes to hold duplicate keys if required
 // Leaf nodes will only hold unique key values, which may have pointers to overflow nodes if multiple records have the same index
@@ -202,75 +201,91 @@ void BPlusTree::insertRecord(float points_home, pointerBlockPair record) {
     GameData* node = static_cast<GameData*>(test->blockAddress);
     float* points_homeArr = (float*) (ptrArr + maxKeys + 1);
 
+    float increment = 0.0000001;
+    int counter = 1;
+    float temp = points_home;
+
     // Check if there will be duplicate keys after the new record is inserted
 
-    // CASE 1: Duplicate key detected in the B+ tree
     for (int i = 0; i <= numKeys -1 ; i++) {
-        if (points_home == points_homeArr[i]){
-            // first check if the key alr has a overflow node
-            void* overflowNode;
-            pointerBlockPair* ptrArrO;
-            float* points_homeArrO;
-            unsigned int* numKeysO;
 
-            if (ptrArr[i].recordID == -1) { // if overflowNode already exists, add on to it
-                overflowNode = ptrArr[i].blockAddress;
-                ptrArrO = (pointerBlockPair*) (((NodeHeader*) overflowNode ) + 1 );
-
-                // Traverse to the last overflow block by following the last pointer
-                while (ptrArrO[maxKeys].blockAddress != nullptr) {
-                    overflowNode = ptrArrO[maxKeys].blockAddress;
-                    ptrArrO = (pointerBlockPair*) (((NodeHeader*) overflowNode ) + 1 );
-                }
-
-                // Check if the last overflowNode has capacity for another duplicate record
-                numKeysO = (unsigned int*) overflowNode;
-                int posToInsert = 0;
-
-                if (*numKeysO == maxKeys) { // last overflowNode is full, a new overflowNode needs to be created
-                    void* newOverflowNode = getNewNode(true, true);
-                    ptrArrO[maxKeys].blockAddress = newOverflowNode; // Link previous overflowNode to newOverflowNode
-
-                    // Reset pointer to newOverflowNode for insertion of key later
-                    ptrArrO = (pointerBlockPair*) (((NodeHeader*) newOverflowNode ) + 1 );
-                    numKeysO = (unsigned int*) newOverflowNode;
-                    (*numKeysO) = 1; // newOverflowNode will consist of 1 key
-                    ptrArrO[maxKeys] = {nullptr, -1}; // Set newOverflowNode to point to nullptr to indicate that it is the last overflowNode
-
-                } else { // last overflowNode has enough space; insert key into this overflowNode
-                    posToInsert = *numKeysO;
-                    (*numKeysO)++; // increment number of keys in overflowNode
-                }
-
-                // Perform insertion of key into the correct overflowNode
-                points_homeArrO = (float*) (ptrArrO + maxKeys + 1);
-                ptrArrO[posToInsert] = record;
-                points_homeArrO[posToInsert] = points_home;
-
-                // Key currently added is the first duplicate, to create an overflow node and link it to the leaf node
-            } else {
-                overflowNode = getNewNode(true, true);
-                ptrArrO = (pointerBlockPair*) (((NodeHeader*) overflowNode ) + 1 );
-                points_homeArrO = (float*) (ptrArrO + maxKeys + 1);
-                numKeysO = (unsigned int*) overflowNode;
-
-                // set first key-ptr pair of overflow block to point to the existing key and its record
-                ptrArrO[0] = ptrArr[i];
-                points_homeArrO[0] = points_homeArr[i];
-
-                // set second key-ptr pair of overflow block to point to new (duplicate) key
-                ptrArrO[1] = record;
-                points_homeArrO[1] = points_home;
-
-                ptrArr[i].blockAddress = overflowNode;
-                ptrArr[i].recordID = -1;
-                ptrArrO[maxKeys].blockAddress = nullptr;
-                ptrArrO[maxKeys].recordID = -1;
-                (*numKeysO) = 2; // Number of keys in overflowNode = 2 (1 for existing key, 1 for duplicate key)
-            }
-            return;
+        if (temp == points_homeArr[i]){
+            temp = points_home + (increment * counter);
+            i = 0;
+            counter++;
         }
     }
+
+    points_home = temp;
+
+
+//    // CASE 1: Duplicate key detected in the B+ tree
+//    for (int i = 0; i <= numKeys -1 ; i++) {
+//        if (points_home == points_homeArr[i]){
+//            // first check if the key alr has a overflow node
+//            void* overflowNode;
+//            pointerBlockPair* ptrArrO;
+//            float* points_homeArrO;
+//            unsigned int* numKeysO;
+//
+//            if (ptrArr[i].recordID == -1) { // if overflowNode already exists, add on to it
+//                overflowNode = ptrArr[i].blockAddress;
+//                ptrArrO = (pointerBlockPair*) (((NodeHeader*) overflowNode ) + 1 );
+//
+//                // Traverse to the last overflow block by following the last pointer
+//                while (ptrArrO[maxKeys].blockAddress != nullptr) {
+//                    overflowNode = ptrArrO[maxKeys].blockAddress;
+//                    ptrArrO = (pointerBlockPair*) (((NodeHeader*) overflowNode ) + 1 );
+//                }
+//
+//                // Check if the last overflowNode has capacity for another duplicate record
+//                numKeysO = (unsigned int*) overflowNode;
+//                int posToInsert = 0;
+//
+//                if (*numKeysO == maxKeys) { // last overflowNode is full, a new overflowNode needs to be created
+//                    void* newOverflowNode = getNewNode(true, true);
+//                    ptrArrO[maxKeys].blockAddress = newOverflowNode; // Link previous overflowNode to newOverflowNode
+//
+//                    // Reset pointer to newOverflowNode for insertion of key later
+//                    ptrArrO = (pointerBlockPair*) (((NodeHeader*) newOverflowNode ) + 1 );
+//                    numKeysO = (unsigned int*) newOverflowNode;
+//                    (*numKeysO) = 1; // newOverflowNode will consist of 1 key
+//                    ptrArrO[maxKeys] = {nullptr, -1}; // Set newOverflowNode to point to nullptr to indicate that it is the last overflowNode
+//
+//                } else { // last overflowNode has enough space; insert key into this overflowNode
+//                    posToInsert = *numKeysO;
+//                    (*numKeysO)++; // increment number of keys in overflowNode
+//                }
+//
+//                // Perform insertion of key into the correct overflowNode
+//                points_homeArrO = (float*) (ptrArrO + maxKeys + 1);
+//                ptrArrO[posToInsert] = record;
+//                points_homeArrO[posToInsert] = points_home;
+//
+//                // Key currently added is the first duplicate, to create an overflow node and link it to the leaf node
+//            } else {
+//                overflowNode = getNewNode(true, true);
+//                ptrArrO = (pointerBlockPair*) (((NodeHeader*) overflowNode ) + 1 );
+//                points_homeArrO = (float*) (ptrArrO + maxKeys + 1);
+//                numKeysO = (unsigned int*) overflowNode;
+//
+//                // set first key-ptr pair of overflow block to point to the existing key and its record
+//                ptrArrO[0] = ptrArr[i];
+//                points_homeArrO[0] = points_homeArr[i];
+//
+//                // set second key-ptr pair of overflow block to point to new (duplicate) key
+//                ptrArrO[1] = record;
+//                points_homeArrO[1] = points_home;
+//
+//                ptrArr[i].blockAddress = overflowNode;
+//                ptrArr[i].recordID = -1;
+//                ptrArrO[maxKeys].blockAddress = nullptr;
+//                ptrArrO[maxKeys].recordID = -1;
+//                (*numKeysO) = 2; // Number of keys in overflowNode = 2 (1 for existing key, 1 for duplicate key)
+//            }
+//            return;
+//        }
+//    }
 
     // CASE 2: Unique key, but number of keys after insertion to node exceeds max number of keys allowed
     if (numKeys == maxKeys){
@@ -291,9 +306,10 @@ void BPlusTree::insertRecord(float points_home, pointerBlockPair record) {
     }
     points_homeArr[i] = points_home;
     ptrArr[i] = record;
-    for(int i=0; i<count; i++){
-        cout << "Record id for " << i << ": " << ptrArr[i].recordID << endl;
-    }
+    cout << fixed << setprecision(7);
+//    for(int i=0; i<count; i++){
+//        cout << "Record id for " << i << ": " << ptrArr[i].recordID << endl;
+//    }
     (*(unsigned int*)nodeToInsertAt)++; //Increment number of records in leaf node
 }
 
@@ -522,7 +538,7 @@ void BPlusTree::splitLeafNode(float points_home, pointerBlockPair record, void* 
     void* rightNode = getNewNode(true, false); // Create new right node
 
     list<pointerBlockPair> tempPtrList;
-    list<unsigned int> tempNumVotesList;
+    list<float> tempPointHomeList;
     unsigned int numLeftKeys = ceil((maxKeys+1)/2.0);
     unsigned int numRightKeys = floor((maxKeys+1)/2.0);
     void* parentNode = ((NodeHeader*)nodeToSplit)->pointerToParent.blockAddress;
@@ -532,15 +548,15 @@ void BPlusTree::splitLeafNode(float points_home, pointerBlockPair record, void* 
 
     for (int i = 0; i < maxKeys; i++) {
         if (!newKeyInserted && points_home < ptsHomeArr[i]){
-            tempNumVotesList.push_back(points_home);
+            tempPointHomeList.push_back(points_home);
             tempPtrList.push_back(record);
             newKeyInserted = true;
         }
-        tempNumVotesList.push_back(ptsHomeArr[i]);
+        tempPointHomeList.push_back(ptsHomeArr[i]);
         tempPtrList.push_back(ptrArr[i]);
     }
     if (points_home > ptsHomeArr[maxKeys-1]){ // Runs when new numNodes is bigger than all keys
-        tempNumVotesList.push_back(points_home);
+        tempPointHomeList.push_back(points_home);
         tempPtrList.push_back(record);
     }
 
@@ -549,18 +565,20 @@ void BPlusTree::splitLeafNode(float points_home, pointerBlockPair record, void* 
 
     // Filling in keys for new left node
     for (int i = 0; i < numLeftKeys; i++) {
-        ptsHomeArr[i] = tempNumVotesList.front();
+        ptsHomeArr[i] = tempPointHomeList.front();
         ptrArr[i] = tempPtrList.front();
-        tempNumVotesList.pop_front();
+        tempPointHomeList.pop_front();
         tempPtrList.pop_front();
     }
     *((unsigned int*) leftNode) = numLeftKeys;
 
     // Filling in keys for new right node
     for (int i = 0; i < numRightKeys; i ++) {
-        pointsHomeArrR[i] = tempNumVotesList.front();
+        pointsHomeArrR[i] = tempPointHomeList.front();
         ptrArrR[i] = tempPtrList.front();
-        tempNumVotesList.pop_front();
+        ptsHomeArr[i+numLeftKeys] = pointsHomeArrR[i];
+        ptrArr[i+numLeftKeys] = ptrArrR[i];
+        tempPointHomeList.pop_front();
         tempPtrList.pop_front();
     }
     *((unsigned int*) rightNode) = numRightKeys;
@@ -694,25 +712,25 @@ void BPlusTree::updateParentNodeAfterSplit(void* parentNode, void* rightNode, fl
 
         //Initialise ptrArr and numVotesArr to access pointer and key arrays
         pointerBlockPair* ptrArr = (pointerBlockPair*) (((NodeHeader*) parentNode ) + 1 );
-        float* numVotesArr = (float*) (ptrArr + maxKeys + 1);
+        float* pointsHomeArr = (float*) (ptrArr + maxKeys + 1);
 
         //parent node need to be split
         if (numKeys == maxKeys) {
             pointerBlockPair addrToRightNode = {rightNode, -1};
-            splitNonLeafNode(newKey, addrToRightNode, parentNode, ptrArr, numVotesArr);
+            splitNonLeafNode(newKey, addrToRightNode, parentNode, ptrArr, pointsHomeArr);
         } else { // parent node don't need to split
             int i;
             for (i = 0; i <= numKeys-1; i++) { //Find position within node to insert key
-                if (newKey < numVotesArr[i]){ // replaced smallestKey with newKey
+                if (newKey < pointsHomeArr[i]){ // replaced smallestKey with newKey
                     ptrArr[numKeys+1] = ptrArr[numKeys]; //replace the last pointer first
                     for (int j = numKeys; j > i; j--) { // shift keys back to accomodate new key
-                        numVotesArr[j] = numVotesArr[j-1];
+                        pointsHomeArr[j] = pointsHomeArr[j-1];
                         ptrArr[j] = ptrArr[j-1];
                     }
                     break;
                 }
             }
-            numVotesArr[i] = newKey; //Insert the index value at specified location // replaced smallestKey with newKey
+            pointsHomeArr[i] = newKey; //Insert the index value at specified location // replaced smallestKey with newKey
             ptrArr[i+1].blockAddress = rightNode; //Insert the pointer to the record in the disk at specified location
             (*(unsigned int*)parentNode)++; //Increment numRecords
             ((NodeHeader*) rightNode)->pointerToParent.blockAddress = parentNode; // right node's parent is the same as left node
