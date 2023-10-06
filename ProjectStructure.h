@@ -40,6 +40,11 @@ struct NodeHeader // 14->16 (padded) bytes, multiple of 4
     bool isLeaf;
 };
 
+struct duplicateCounter{
+    float keyValue;
+    int count;
+};
+
 
 
 #endif //PROJECT1_PROJECTSTRUCTURE_H

@@ -7,6 +7,7 @@
 #include <iostream>
 #include <math.h>
 #include <fstream>
+#include "vector"
 
 using namespace std;
 
@@ -16,6 +17,8 @@ public:
     unsigned int height;
     unsigned int maxKeys;
     unsigned int sizeOfNode;
+
+    vector<duplicateCounter> duplicateCount;
 
     //For Experiments
     unsigned int numNodes;
@@ -51,6 +54,8 @@ public:
     int printIndexBlock(void* node, ofstream &output);
     void printRoot(ofstream &output);
     void printTree(ofstream &output);
+    int getMax(float maxVal, float start);
+    void* findKeyToDelete(float pointsHome, void* rootNode, ofstream &output);
 };
 
 #endif //PROJECT1_BPLUSTREE_H

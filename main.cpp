@@ -3,6 +3,7 @@
 #include <cstring>
 #include <filesystem>
 #include "Database.h"
+#include "ProjectStructure.h"
 
 using namespace std;
 
@@ -25,6 +26,15 @@ int main() {
     int choice;
 
     db->importData();
+
+    /*vector<duplicateCounter> potato = db->bPlusTree->duplicateCount;
+    for (auto& entry : potato) {
+        if (entry.keyValue == 0.5) {
+            // Value found, increment the count
+            cout << "duplicate count is: " << entry.count << endl;
+            break;
+        }
+    }*/
 
     while(1){
         cout << "1) Run Experiment 1\n"
@@ -82,29 +92,27 @@ int main() {
                 cout << "Experiment 3: " << endl;
                 exp3Output.open(resultsDir + "experiment3output.txt");
                 cout << "Retrieve movies with 'FG_PCT_HOME' equal to 0.5" << endl;
-                db->bPlusTree->findRecord(0.5, 0.5, exp3Output);
-                
+                db->bPlusTree->findRecord(0.5, 0.5001, exp3Output);
+                exp3Output.close();
                 break;
-
-            case 5: //test case for temporary
-                cout << "test" << endl;
-                test.open(resultsDir + "test.txt");
-                db->bPlusTree->printTree(test);
-                test.close();
-                break;
-
             case 4:
                 cout << "Experiment 4:" << endl;
                 //Write output to file
                 exp4Output.open(resultsDir + "experiment4output.txt");
-                db->bPlusTree->findRecord(0.6, 0.1, exp4Output);
+                db->bPlusTree->findRecord(0.6, 1.0, exp4Output);
                 //print to screen
                 cout << "Retrieve movies with 'FG_PCT_HOME' from 0.6 to 1" << "\n";
                 //cout << db->bPlusTree->findRecord(0.6, 0.1, exp4Output) << "\n";
                 //debug this
                 exp4Output.close();
-                cout << endl << endl;
-                test.close();
+                //cout << endl << endl;
+                //test.close();
+                break;
+            case 5: //test case for temporary
+                cout << "Experiment5:" << endl;
+                exp5Output.open(resultsDir + "experiment5output.txt");
+                db->bPlusTree->findKeyToDelete(0.35,db->bPlusTree->root, exp5Output);
+                exp5Output.close();
                 break;
             case 6:
                 cout << "Exiting program..." << endl;

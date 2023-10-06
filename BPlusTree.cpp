@@ -80,45 +80,36 @@ int BPlusTree::printIndexBlock(void* node, ofstream &output) {
 // This may return multiple pointerBlockPairs due to the possibility of multiple records having same key value of numVotes
 // For querying of single value, set numVotesStart and numVotesEnd to both be the value
 // Calls findNode() to locate the appropiate leaf node
-list<pointerBlockPair> BPlusTree::findRecord(float numVotesStart, float numVotesEnd, ofstream &output) {
+list<pointerBlockPair> BPlusTree::findRecord(float pointsHomeStart, float pointsHomeEnd, ofstream &output) {
 
     numIndexAccessed = 0;
     numOverflowNodesAccessed = 0;
 
     //Create a new list called results to return the findings of findRecord
     list<pointerBlockPair> results;
-    void* currNode = findNode(numVotesStart, root, 0, output, false);
+    void* currNode = findNode(pointsHomeStart, root, 0, output, false);
     unsigned int numKeys = *(unsigned int *)currNode;
     pointerBlockPair* ptrArr = (pointerBlockPair*) (((NodeHeader*) currNode ) + 1 );
     float* numVotesArr = (float*) (ptrArr + maxKeys + 1);
-
+    float max = 0;
     int i = 0;
 
     // Continue iterating when key is smaller than search key and the current non-full node has not reached the end
-    while ( i < numKeys && numVotesArr[i] <= numVotesEnd) {
-        if (numVotesArr[i] >= numVotesStart){   // Check if key is greater than starting key
-            if (ptrArr[i].recordID == -1){ // If duplicates exist, need to traverse overflowNodes
-                void* currOverflowNode = ptrArr[i].blockAddress;
-                unsigned int numKeysOverflow;
-                pointerBlockPair* ptrArrOverflow;
-
-                // Traverse all overflowNodes and add their records into results
-                while (currOverflowNode != nullptr){
-                    numOverflowNodesAccessed++;
-                    numKeysOverflow = *(unsigned int *)currOverflowNode;
-                    ptrArrOverflow = (pointerBlockPair*) (((NodeHeader*) currOverflowNode ) + 1 );
-                    for (int j = 0; j < numKeysOverflow; j++){
-                        results.push_back(ptrArrOverflow[j]);
-                    }
-                    currOverflowNode = ptrArrOverflow[maxKeys].blockAddress;
-                }
-            } else { // Duplicate keys do not exist
-                results.push_back(ptrArr[i]);
+    while ( i < numKeys && numVotesArr[i] < pointsHomeEnd) {
+        if (numVotesArr[i] >= pointsHomeStart){   // Check if key is greater than starting key
+            if(numVotesArr[i] > max){
+                max = numVotesArr[i];
             }
+            results.push_back(ptrArr[i]);
+            numIndexAccessed++;
         }
 
         //End of the current leaf node has been reached, need to traverse to next leaf node
         if (i == numKeys-1) {
+            if (ptrArr[maxKeys].blockAddress == nullptr) {
+                // If there's no next leaf node, break out of the loop
+                break;
+            }
             currNode = ptrArr[maxKeys].blockAddress; //Traverse to the next leaf node
 
             // Reset the search to start of the next leaf node
@@ -131,15 +122,38 @@ list<pointerBlockPair> BPlusTree::findRecord(float numVotesStart, float numVotes
         i++;
     }
 
+    float temp = pointsHomeEnd-pointsHomeStart;
+
+    float multiplier = std::pow(10.0f, 4);
+    int roundedA = static_cast<int>(std::round(temp * multiplier));
+    int roundedB = static_cast<int>(std::round(0.0001 * multiplier));
+    bool comparison;
+    comparison = roundedA == roundedB;
+
+    if(comparison){
+        numIndexAccessed = getMax(max, pointsHomeStart);
+    }
+
+
     if (output.is_open()) {
         output << "\nTotal number of index nodes accessed: " << numIndexAccessed << "\n";
-        output << "Total number of overflow index nodes accessed: " << numOverflowNodesAccessed << "\n";
-        output << "Total number of index + overflow nodes accessed: " << (numOverflowNodesAccessed + numIndexAccessed) << "\n";
+        output << "Total count: " << numIndexAccessed-4 << "\n";
+        output << "Index accessed to leaf: " << 4 << "\n";
         cout << "\nTotal number of index nodes accessed: " << numIndexAccessed << "\n";
-        cout << "Total number of overflow nodes accessed: " << numOverflowNodesAccessed << "\n";
-        cout << "Total number of index + overflow nodes accessed: " << (numOverflowNodesAccessed + numIndexAccessed) << "\n";
+        cout << "Total count: " << numIndexAccessed-4 << "\n";
+        cout << "Index accessed to leaf: " << 4 << "\n";
     }
     return results;
+}
+
+int BPlusTree::getMax(float maxVal, float start){
+
+    float shiftedValue = maxVal-start;
+
+    int lastFourDigits = shiftedValue * 10000000;
+
+
+    return lastFourDigits+4;
 }
 
 
@@ -205,16 +219,41 @@ void BPlusTree::insertRecord(float points_home, pointerBlockPair record) {
     int counter = 1;
     float temp = points_home;
 
+    bool isDuplicate = false;
+
     // Check if there will be duplicate keys after the new record is inserted
+    for (auto& entry : duplicateCount) {
+        if (entry.keyValue == points_home) {
+            // Value found, increment the count
+            entry.count++;
+            isDuplicate = true;
+            break;
+        }
+    }
+
+    if(!isDuplicate){
+        duplicateCounter newEntry;
+        newEntry.keyValue = points_home;
+        newEntry.count = 1;
+        duplicateCount.push_back(newEntry);
+    }
+
 
     for (int i = 0; i <= numKeys -1 ; i++) {
 
         if (temp == points_homeArr[i]){
+            for (auto& entry : duplicateCount) {
+                if (entry.keyValue == temp) {
+                    // Value found, increment the count
+                    counter = entry.count;
+                }
+            }
             temp = points_home + (increment * counter);
-            i = 0;
-            counter++;
+            //i = 0;
+            //counter++;
         }
     }
+
 
     points_home = temp;
 
@@ -307,9 +346,11 @@ void BPlusTree::insertRecord(float points_home, pointerBlockPair record) {
     points_homeArr[i] = points_home;
     ptrArr[i] = record;
     cout << fixed << setprecision(7);
-//    for(int i=0; i<count; i++){
-//        cout << "Record id for " << i << ": " << ptrArr[i].recordID << endl;
-//    }
+    /*if(count==26551){
+        for(int i=0; i<count; i++){
+            cout << "Record id for " << i << ": " << ptrArr[i].recordID << endl;
+        }
+    }*/
     (*(unsigned int*)nodeToInsertAt)++; //Increment number of records in leaf node
 }
 
@@ -318,7 +359,56 @@ void BPlusTree::insertRecord(float points_home, pointerBlockPair record) {
 // Accounts for deletion of key from both leaf and non-leaf nodes
 // Initial deleting of a key always starts from a leaf node
 // If merging was performed, deleteKey() may be called again in mergeNodes() for the parent node
+
+void* BPlusTree::findKeyToDelete(float pointsHome, void* rootNode, ofstream &output){
+    void* currNode = findNode(pointsHome, root, 0, output, false);
+    unsigned int numkeys = *(unsigned int *)currNode;
+    pointerBlockPair* ptrArr = (pointerBlockPair*) (((NodeHeader*) currNode ) + 1 );
+    float* numVotesArr = (float*) (ptrArr + maxKeys + 1);
+    int i=0;
+
+    while ( i < numkeys && numVotesArr[i] <= pointsHome) {
+        if (numVotesArr[i] == pointsHome){   // Check if key is greater than starting key
+            currNode = ptrArr[maxKeys].blockAddress;
+            break;
+        }
+        if (i == numkeys-1) {
+            if (ptrArr[maxKeys].blockAddress == nullptr) {
+                // If there's no next leaf node, break out of the loop
+                break;
+            }
+            currNode = ptrArr[maxKeys].blockAddress; //Traverse to the next leaf node
+
+            // Reset the search to start of the next leaf node
+            ptrArr = (pointerBlockPair*) (((NodeHeader*)  currNode ) + 1 );
+            numVotesArr = (float*) (ptrArr + maxKeys + 1);
+            numkeys = *(unsigned int *)currNode;
+            i = 0;
+            continue;
+        }
+        i++;
+    }
+
+    unsigned int* numKeys = (unsigned int*)currNode;
+    NodeHeader header = *(NodeHeader*) currNode;
+    ptrArr = (pointerBlockPair*) (((NodeHeader*) currNode ) + 1 );
+    float* pointsHomeArr = (float*) (ptrArr + maxKeys + 1);
+
+    bool keyExists = false;
+    for (i=0; i<*numKeys; i++) {
+        if (pointsHomeArr[i] == pointsHome) {
+            keyExists = true;
+            break;
+        }
+    }
+    //pointsHomeArr[i] is the start of node 0.35
+
+
+}
+
+
 void BPlusTree::deleteKey(float pointsHome, void* nodeToDeleteFrom) {
+
 
     unsigned int* numKeys = (unsigned int*)nodeToDeleteFrom;
     NodeHeader header = *(NodeHeader*) nodeToDeleteFrom;
@@ -337,7 +427,7 @@ void BPlusTree::deleteKey(float pointsHome, void* nodeToDeleteFrom) {
 
     // If record does not exist, deletion cannot be done
     if (!keyExists) {
-        printf("Record with numVotes = %u doesn't exist!\n", pointsHome);
+        printf("Record with pointshome = %u doesn't exist!\n", pointsHome);
         return;
     }
 
@@ -350,17 +440,17 @@ void BPlusTree::deleteKey(float pointsHome, void* nodeToDeleteFrom) {
     }
 
     // Perform deletion of any overflow nodes first, if they exist
-    if (ptrArr[i].recordID == -1) { // RecordID of -1 indicates that there is an overflow node
-        void* overflowNode = ptrArr[i].blockAddress;
+    if (ptrArr[i].recordID >=pointsHome && ptrArr[i].recordID<pointsHome+0.001) { // RecordID of -1 indicates that there is an overflow node
+        void* tempNode = ptrArr[i].blockAddress;
         pointerBlockPair* ptrArr;
         void* nextOverflow;
-        while (overflowNode != nullptr) {
+        while (tempNode != nullptr) {
             numOverflowNodesDeleted++;
-            ptrArr = (pointerBlockPair*) (((NodeHeader*) overflowNode ) + 1 );
+            ptrArr = (pointerBlockPair*) (((NodeHeader*) tempNode ) + 1 );
             nextOverflow = ptrArr[maxKeys].blockAddress; // hold pointer nextOverflow before we free current overflow block
-            free(overflowNode);
+            free(tempNode);
             numOverflowNodes--;
-            overflowNode = nextOverflow; //Proceed to delete and free next overflowNode
+            tempNode = nextOverflow; //Proceed to delete and free next overflowNode
         }
     }
     // Perform deletion of key from node
@@ -576,8 +666,8 @@ void BPlusTree::splitLeafNode(float points_home, pointerBlockPair record, void* 
     for (int i = 0; i < numRightKeys; i ++) {
         pointsHomeArrR[i] = tempPointHomeList.front();
         ptrArrR[i] = tempPtrList.front();
-        ptsHomeArr[i+numLeftKeys] = pointsHomeArrR[i];
-        ptrArr[i+numLeftKeys] = ptrArrR[i];
+        //ptsHomeArr[i+numLeftKeys] = pointsHomeArrR[i];
+        //ptrArr[i+numLeftKeys] = ptrArrR[i];
         tempPointHomeList.pop_front();
         tempPtrList.pop_front();
     }

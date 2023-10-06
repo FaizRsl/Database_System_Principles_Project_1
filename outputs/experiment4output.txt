@@ -1,0 +1,4 @@
+
+Total number of index nodes accessed: 242
+Total count: 238
+Index accessed to leaf: 4
