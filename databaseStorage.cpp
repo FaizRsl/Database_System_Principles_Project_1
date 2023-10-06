@@ -13,7 +13,10 @@ using namespace std;
 
 std::vector<GameData> databaseStorage::getDatabaseRecord(){
     string pathtofile = std::filesystem::current_path().parent_path().string() + "/games.txt";
+<<<<<<< Updated upstream
     //cout << pathtofile << endl;
+=======
+>>>>>>> Stashed changes
     std::ifstream inputFile(pathtofile);
     if (!inputFile.is_open()) {
         std::cerr << "Error opening file." << std::endl;

@@ -8,11 +8,11 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/Users/fdl9/Desktop/Y3S1_Projects/DatabaseProj/Project1/project1/BPlusTree.cpp" "CMakeFiles/Project1.dir/BPlusTree.cpp.o" "gcc" "CMakeFiles/Project1.dir/BPlusTree.cpp.o.d"
-  "/Users/fdl9/Desktop/Y3S1_Projects/DatabaseProj/Project1/project1/Database.cpp" "CMakeFiles/Project1.dir/Database.cpp.o" "gcc" "CMakeFiles/Project1.dir/Database.cpp.o.d"
-  "/Users/fdl9/Desktop/Y3S1_Projects/DatabaseProj/Project1/project1/DiskAllocation.cpp" "CMakeFiles/Project1.dir/DiskAllocation.cpp.o" "gcc" "CMakeFiles/Project1.dir/DiskAllocation.cpp.o.d"
-  "/Users/fdl9/Desktop/Y3S1_Projects/DatabaseProj/Project1/project1/databaseStorage.cpp" "CMakeFiles/Project1.dir/databaseStorage.cpp.o" "gcc" "CMakeFiles/Project1.dir/databaseStorage.cpp.o.d"
-  "/Users/fdl9/Desktop/Y3S1_Projects/DatabaseProj/Project1/project1/main.cpp" "CMakeFiles/Project1.dir/main.cpp.o" "gcc" "CMakeFiles/Project1.dir/main.cpp.o.d"
+  "/Users/anoushkanahata/Desktop/SC3020/Project_1/BPlusTree.cpp" "CMakeFiles/Project1.dir/BPlusTree.cpp.o" "gcc" "CMakeFiles/Project1.dir/BPlusTree.cpp.o.d"
+  "/Users/anoushkanahata/Desktop/SC3020/Project_1/Database.cpp" "CMakeFiles/Project1.dir/Database.cpp.o" "gcc" "CMakeFiles/Project1.dir/Database.cpp.o.d"
+  "/Users/anoushkanahata/Desktop/SC3020/Project_1/DiskAllocation.cpp" "CMakeFiles/Project1.dir/DiskAllocation.cpp.o" "gcc" "CMakeFiles/Project1.dir/DiskAllocation.cpp.o.d"
+  "/Users/anoushkanahata/Desktop/SC3020/Project_1/databaseStorage.cpp" "CMakeFiles/Project1.dir/databaseStorage.cpp.o" "gcc" "CMakeFiles/Project1.dir/databaseStorage.cpp.o.d"
+  "/Users/anoushkanahata/Desktop/SC3020/Project_1/main.cpp" "CMakeFiles/Project1.dir/main.cpp.o" "gcc" "CMakeFiles/Project1.dir/main.cpp.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.
