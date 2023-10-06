@@ -307,9 +307,9 @@ void BPlusTree::insertRecord(float points_home, pointerBlockPair record) {
     points_homeArr[i] = points_home;
     ptrArr[i] = record;
     cout << fixed << setprecision(7);
-//    for(int i=0; i<count; i++){
-//        cout << "Record id for " << i << ": " << ptrArr[i].recordID << endl;
-//    }
+    for(int i=0; i<count; i++){
+        cout << "Record id for " << i << ": " << ptrArr[i].recordID << endl;
+    }
     (*(unsigned int*)nodeToInsertAt)++; //Increment number of records in leaf node
 }
 

@@ -12,7 +12,8 @@
 using namespace std;
 
 std::vector<GameData> databaseStorage::getDatabaseRecord(){
-    string pathtofile = std::filesystem::current_path().parent_path().string() + "\\games.txt";
+    string pathtofile = std::filesystem::current_path().parent_path().string() + "/games.txt";
+    //cout << pathtofile << endl;
     std::ifstream inputFile(pathtofile);
     if (!inputFile.is_open()) {
         std::cerr << "Error opening file." << std::endl;
@@ -27,10 +28,10 @@ std::vector<GameData> databaseStorage::getDatabaseRecord(){
     // Skip the first line (column titles)
     std::getline(inputFile, line);
 
+
     while (std::getline(inputFile, line)) {
         std::istringstream iss(line);
         GameData gameData;
-
         //gameData.recordID = count;
         count++;
 

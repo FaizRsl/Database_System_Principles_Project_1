@@ -1,3 +1,3 @@
-D:/Desktop Folder/NTU/Year3 Sem1/Database System Principles/Projects/ProjectOne/cmake-build-debug/CMakeFiles/Project1.dir
-D:/Desktop Folder/NTU/Year3 Sem1/Database System Principles/Projects/ProjectOne/cmake-build-debug/CMakeFiles/edit_cache.dir
-D:/Desktop Folder/NTU/Year3 Sem1/Database System Principles/Projects/ProjectOne/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Users/fdl9/Desktop/Y3S1_Projects/DatabaseProj/Project1/project1/cmake-build-debug/CMakeFiles/Project1.dir
+/Users/fdl9/Desktop/Y3S1_Projects/DatabaseProj/Project1/project1/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/fdl9/Desktop/Y3S1_Projects/DatabaseProj/Project1/project1/cmake-build-debug/CMakeFiles/rebuild_cache.dir
