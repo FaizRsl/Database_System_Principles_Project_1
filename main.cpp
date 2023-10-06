@@ -34,7 +34,19 @@ int main() {
                 "5) Run Experiment 5\n"
                 "6) Exit program\n";
 
-        cin >> choice;
+        cout << "Enter your choice: ";
+        try {
+            cin >> choice;
+            if (cin.fail() || choice < 1 || choice > 6) {
+                throw runtime_error("Invalid choice. Please enter an integer from 1-6.");
+            }
+        }
+        catch (const exception& e) {
+            cout << e.what() << endl;
+            cin.clear(); // Clear the error flag
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Discard the invalid input
+            continue; // Skip the rest of the loop and prompt for input again
+        }
 
         switch(choice){
             case 1:
