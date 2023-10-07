@@ -61,7 +61,7 @@ std::vector<GameData> databaseStorage::getDatabaseRecord(){
         //std::cout << "Date: " << tm.tm_mday << "/" << tm.tm_mon + 1 << "/" << tm.tm_year + 1900 << std::endl;
         gameData.GAME_DATE_EST = timestamp;
 
-        if (!(iss >> gameData.TEAM_ID_home >> gameData.PTS_home >>
+        if (!(iss >> gameData.recordID >> gameData.TEAM_ID_home >> gameData.PTS_home >>
                   gameData.FG_PCT_home >> gameData.FT_PCT_home >> gameData.FG3_PCT_home >>
                   gameData.AST_home >> gameData.REB_home >> gameData.HOME_TEAM_WINS)) {
             //std::cerr << "Error parsing line: " << line << std::endl;
@@ -84,6 +84,7 @@ std::vector<GameData> databaseStorage::getDatabaseRecord(){
 
         // Handle missing values (nulls) by setting them to 0
         if (iss.fail()) {
+            gameData.recordID = 0.0;
             gameData.FG_PCT_home = 0.0;
             gameData.FT_PCT_home = 0.0;
             gameData.FG3_PCT_home = 0.0;

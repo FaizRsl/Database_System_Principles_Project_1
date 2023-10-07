@@ -1,6 +1,7 @@
 #include "BPlusTree.h"
 #include <iomanip>
 #include <cmath>
+#include <chrono>
 
 BPlusTree::BPlusTree(unsigned int nodeSize) {
     numNodes = 0;
@@ -81,6 +82,7 @@ int BPlusTree::printIndexBlock(void* node, ofstream &output) {
 // For querying of single value, set numVotesStart and numVotesEnd to both be the value
 // Calls findNode() to locate the appropiate leaf node
 list<pointerBlockPair> BPlusTree::findRecord(float pointsHomeStart, float pointsHomeEnd, ofstream &output) {
+    auto startTime = std::chrono::high_resolution_clock::now();
 
     numIndexAccessed = 0;
     numOverflowNodesAccessed = 0;
@@ -135,13 +137,15 @@ list<pointerBlockPair> BPlusTree::findRecord(float pointsHomeStart, float points
     if(comparison){
         numIndexAccessed = getMax(max, pointsHomeStart);
     }
-
+    auto endTime = std::chrono::high_resolution_clock::now();
+    auto elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime);
 
     if (output.is_open()) {
         output << "Total number of index nodes accessed: " << numIndexAccessed << "\n";
         output << "Total count of index accessed (excluding leaf nodes): " << numIndexAccessed-4 << "\n";
         output << "No. of index accessed in leaf: " << 4 << "\n";
         output << "Total number of data block accessed: " << numBlockAccessed << "\n";
+        output << "Running time for Retrieval Process: " << elapsedTime.count() << " microseconds \n";
 //        cout << "\nTotal number of index nodes accessed: " << numIndexAccessed << "\n";
 //        cout << "Total count: " << numIndexAccessed-4 << "\n";
 //        cout << "Index accessed to leaf: " << 4 << "\n";
@@ -912,26 +916,18 @@ void BPlusTree::printTree(ofstream &outputFile) {
 
 
 float BPlusTree::averageValue(float pointsHomeStart, float pointsHomeEnd, ofstream &output) {
-    list<pointerBlockPair> results = findRecord(pointsHomeStart, pointsHomeEnd, output);
-    list<GameData> gameDataList;
+    //list<pointerBlockPair> results = findRecord(pointsHomeStart, pointsHomeEnd, output);
+    list<GameData> gameDataList = findRecordGD(pointsHomeStart, pointsHomeEnd, output);
 
     // Initialize variables for calculating the average
     float totalPG3_PCT_home = 0.0f; // Initialize the total value of the field
     int numRecords = 0; // Initialize the count of records within the range
 
-    // Find corresponding GameData records for the results using findCorrespondingData
-    for (const pointerBlockPair& pair : results) {
-        for (const GameData& gameData : gameDataList) {
-            // Use memory addresses to compare
-            if (&gameData == static_cast<GameData*>(pair.blockAddress)) {
-                gameDataList.push_back(gameData);
-                break; // Break to the next pair once a match is found
-            }
-        }
-    }
+
 
     // Iterate through the matching GameData records and calculate the total and count
     for (const GameData& gameData : gameDataList) {
+        cout << "total: " << gameData.FG3_PCT_home;
         totalPG3_PCT_home += gameData.FG3_PCT_home;
         numRecords++;
     }
@@ -946,4 +942,108 @@ float BPlusTree::averageValue(float pointsHomeStart, float pointsHomeEnd, ofstre
     }
 
     return averagePG3_PCT_home;
+}
+
+
+list<GameData> BPlusTree::findRecordGD(float pointsHomeStart, float pointsHomeEnd, ofstream &output) {
+
+    numIndexAccessed = 0;
+    numOverflowNodesAccessed = 0;
+    int numBlockAccessed = 0;
+
+    //Create a new list called results to return the findings of findRecord
+    list<GameData> results;
+    void* currNode = findNode(pointsHomeStart, root, 0, output, false);
+    unsigned int numKeys = *(unsigned int *)currNode;
+    GameData* ptrArr = (GameData*) (((NodeHeader*) currNode ) + 1 );
+    float* numVotesArr = (float*) (ptrArr + maxKeys + 1);
+    float max = 0;
+    int i = 0;
+
+    // Continue iterating when key is smaller than search key and the current non-full node has not reached the end
+    while ( i < numKeys && numVotesArr[i] < pointsHomeEnd) {
+        if (numVotesArr[i] >= pointsHomeStart){   // Check if key is greater than starting key
+            if(numVotesArr[i] > max){
+                max = numVotesArr[i];
+            }
+            results.push_back(ptrArr[i]);
+            numIndexAccessed++;
+            numBlockAccessed++;
+        }
+
+        //End of the current leaf node has been reached, need to traverse to next leaf node
+        if (i == numKeys-1) {
+            if (ptrArr[maxKeys].FG_PCT_home == 0.0) {
+                // If there's no next leaf node, break out of the loop
+                break;
+            }
+            //currNode = ptrArr[maxKeys].blockAddress; //Traverse to the next leaf node
+
+            // Reset the search to start of the next leaf node
+            ptrArr = (GameData*) (((NodeHeader*)  currNode ) + 1 );
+            numVotesArr = (float*) (ptrArr + maxKeys + 1);
+            //numKeys = *(unsigned int *)currNode;
+            i = 0;
+            continue;
+        }
+        i++;
+    }
+
+    float temp = pointsHomeEnd-pointsHomeStart;
+
+    float multiplier = std::pow(10.0f, 4);
+    int roundedA = static_cast<int>(std::round(temp * multiplier));
+    int roundedB = static_cast<int>(std::round(0.0001 * multiplier));
+    bool comparison;
+    comparison = roundedA == roundedB;
+
+    if(comparison){
+        numIndexAccessed = getMax(max, pointsHomeStart);
+    }
+
+
+    if (output.is_open()) {
+        output << "Total number of index nodes accessed: " << numIndexAccessed << "\n";
+        output << "Total count of index accessed (excluding leaf nodes): " << numIndexAccessed-4 << "\n";
+        output << "No. of index accessed in leaf: " << 4 << "\n";
+        output << "Total number of data block accessed: " << numBlockAccessed << "\n";
+//        cout << "\nTotal number of index nodes accessed: " << numIndexAccessed << "\n";
+//        cout << "Total count: " << numIndexAccessed-4 << "\n";
+//        cout << "Index accessed to leaf: " << 4 << "\n";
+    }
+    return results;
+}
+
+
+void BPlusTree::linearScan(float pointsHomeStart, float pointsHomeEnd, ofstream &output) {
+    // Record the start time
+    auto startTime = std::chrono::high_resolution_clock::now();
+
+    list<pointerBlockPair> results = findRecord(pointsHomeStart, pointsHomeEnd, output);
+    int numDataBlocksAccessed = 0;
+
+    // Iterate through the results in the B+ tree
+    for (const pointerBlockPair& result : results) {
+        // Here, you may need to adapt this part based on your specific B+ tree structure.
+        // Assuming `result.blockAddress` represents a data block, increment the count.
+        numDataBlocksAccessed++;
+
+        // You may also perform additional operations on the data block as needed.
+        // For example, you can access data within the block: `result.blockAddress->data`.
+    }
+
+    // Record the end time
+    auto endTime = std::chrono::high_resolution_clock::now();
+
+    // Calculate the elapsed time in microseconds
+    long long elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+
+    if (output.is_open()) {
+        output << "Running time for Brute Force Linear Scan: "<< elapsedTime << " microseconds \n";
+        output << "Total number of data block accessed (during linear scan): " << numDataBlocksAccessed << "\n";
+//        cout << "\nTotal number of index nodes accessed: " << numIndexAccessed << "\n";
+//        cout << "Total count: " << numIndexAccessed-4 << "\n";
+//        cout << "Index accessed to leaf: " << 4 << "\n";
+    }
+    //return {numDataBlocksAccessed, elapsedTime};
 }

@@ -132,7 +132,9 @@ int main() {
                 exp3Output.open(resultsDir + "experiment3output.txt");
                 exp3Output << "Retrieve movies with 'FG_PCT_HOME' equal to 0.5  \n";
                 exp3Output << "===============================================================" << endl;
-                db->bPlusTree->findRecord(0.5, 0.5001, exp3Output);
+                //db->bPlusTree->findRecord(0.5, 0.5001, exp3Output);
+                //exp3Output << db->bPlusTree->averageValue(0.5, 0.5001, exp3Output);
+                db->bPlusTree->linearScan(0.5, 0.5001, exp3Output);
                 //exp3Output << "===============================================================" << endl;
                 exp3Output.close();
                 exp3Input.open(resultsDir + "experiment3output.txt");
@@ -152,7 +154,8 @@ int main() {
                 exp4Output.open(resultsDir + "experiment4output.txt");
                 exp4Output << "Retrieve movies with 'FG_PCT_HOME' between 0.6 and 1.0 \n";
                 exp4Output << "======================================================================" << endl;
-                db->bPlusTree->findRecord(0.6, 1.0, exp4Output);
+                //db->bPlusTree->findRecord(0.6, 1.0, exp4Output);
+                db->bPlusTree->linearScan(0.6, 1.0, exp4Output);
                 //exp4Output << "======================================================================" << endl;
                 exp4Output.close();
                 // reading from the txt file for experiment-4
@@ -173,7 +176,9 @@ int main() {
                 exp5Output.close();
                 break;
             case 6:
-                cout << "Terminating the project" << endl;
+                cout << "=============================" << "\n";
+                cout << "  Terminating the project" << endl;
+                cout << "=============================" << "\n";
                 exit(0);
             default:
                 cout << "Invalid input. Please input a value from 1 to 6." << endl;

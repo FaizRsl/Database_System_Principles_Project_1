@@ -36,6 +36,7 @@ public:
 
     //Retrieval functions
     list<pointerBlockPair> findRecord(float pointsHomeStart, float pointsHomeEnd, ofstream &output);
+    list<GameData> findRecordGD(float pointsHomeStart, float pointsHomeEnd, ofstream &output);
     void* findNode(float points_home, void* node, unsigned int currentHeight, ofstream &output, bool willPrint);
 
     //Functions for inserting a record
@@ -58,6 +59,7 @@ public:
     void* findKeyToDelete(float pointsHome, void* rootNode, ofstream &output);
     //int countDataBlocksAccessed(float pointsHomeStart, float pointsHomeEnd, ofstream &output);
     float averageValue(float pointsHomeStart, float pointsHomeEnd, ofstream &output);
+    void linearScan(float pointsHomeStart, float pointsHomeEnd, ofstream &output);
     //string printTree(ofstream &outputFile);
 };
 

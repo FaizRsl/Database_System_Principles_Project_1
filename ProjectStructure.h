@@ -9,6 +9,7 @@ using namespace std;
 
 #pragma pack(1)
 struct GameData {
+    float recordID; //4 --> might remove later
     time_t GAME_DATE_EST; //8
     unsigned int TEAM_ID_home; //4
     unsigned short PTS_home; //2
