@@ -136,12 +136,12 @@ list<pointerBlockPair> BPlusTree::findRecord(float pointsHomeStart, float points
 
 
     if (output.is_open()) {
-        output << "\nTotal number of index nodes accessed: " << numIndexAccessed << "\n";
-        output << "Total count: " << numIndexAccessed-4 << "\n";
-        output << "Index accessed to leaf: " << 4 << "\n";
-        cout << "\nTotal number of index nodes accessed: " << numIndexAccessed << "\n";
-        cout << "Total count: " << numIndexAccessed-4 << "\n";
-        cout << "Index accessed to leaf: " << 4 << "\n";
+        output << "Total number of index nodes accessed: " << numIndexAccessed << "\n";
+        output << "Total count of index accessed (excluding leaf nodes): " << numIndexAccessed-4 << "\n";
+        output << "No. of index accessed in leaf: " << 4 << "\n";
+//        cout << "\nTotal number of index nodes accessed: " << numIndexAccessed << "\n";
+//        cout << "Total count: " << numIndexAccessed-4 << "\n";
+//        cout << "Index accessed to leaf: " << 4 << "\n";
     }
     return results;
 }
@@ -869,41 +869,79 @@ void BPlusTree::shiftElementsBack(float* pointsHomeArr, pointerBlockPair* ptrArr
 
 // Prints the current B+ Tree level by level
 // Shows the keys currently in each node
-void BPlusTree::printTree(ofstream &output) {
-
+void BPlusTree::printTree(ofstream &outputFile) {
     list<void*> queue;
     int nodesInCurLevel = 1;
     int nodesInNextLevel = 0;
     int nodesPrinted = 0;
     queue.push_back(root);
 
-    while (queue.size() != 0) {
+    while (!queue.empty()) {
         void* currNode = queue.front();
         queue.pop_front();
 
-        // print currNode
-        nodesInNextLevel += printIndexBlock(currNode, output) + 1;
+        // Write currNode to the output file
+        nodesInNextLevel += printIndexBlock(currNode, outputFile) + 1;
         nodesPrinted++;
-        if(nodesPrinted == nodesInCurLevel){
+        if (nodesPrinted == nodesInCurLevel) {
             nodesInCurLevel = nodesInNextLevel;
             nodesInNextLevel = 0;
             nodesPrinted = 0;
-            cout<<"\n+++++++++++++++++++++++\n";
+            outputFile << "\n+++++++++++++++++++++++\n";
         } else {
-            cout<<"--------";
+            outputFile << "--------";
         }
 
-        NodeHeader* header = (NodeHeader*) currNode;
+        NodeHeader* header = (NodeHeader*)currNode;
         unsigned int numKeys = header->numKeys;
-        pointerBlockPair* ptrArr = (pointerBlockPair*) (((NodeHeader*) currNode ) + 1 );
-        // add child nodes
+        pointerBlockPair* ptrArr = (pointerBlockPair*)(((NodeHeader*)currNode) + 1);
+
+        // Add child nodes
         if (!(header->isLeaf)) {
-            for (unsigned int i=0; i<numKeys+1; i++) {
+            for (unsigned int i = 0; i < numKeys + 1; i++) {
                 queue.push_back(ptrArr[i].blockAddress);
             }
         }
-
     }
 
-    cout << "\n===================\n";
+    outputFile << "\n===================\n";
 }
+
+int BPlusTree::countDataBlocksAccessed(float pointsHomeStart, float pointsHomeEnd, ofstream &output) {
+    numIndexAccessed = 0;
+    numOverflowNodesAccessed = 0;
+
+    int totalDataBlocksAccessed = 0; // Counter to track the total data blocks accessed
+
+    void* currNode = findNode(pointsHomeStart, root, 0, output, false);
+    unsigned int numKeys = *(unsigned int*)currNode;
+    pointerBlockPair* ptrArr = (pointerBlockPair*)(((NodeHeader*)currNode) + 1);
+    float* numVotesArr = (float*)(ptrArr + maxKeys + 1);
+
+    // Continue iterating while keys are within the specified range
+    while (numVotesArr[0] < pointsHomeEnd) {
+        for (unsigned int i = 0; i < numKeys; i++) {
+            if (numVotesArr[i] >= pointsHomeStart && numVotesArr[i] <= pointsHomeEnd) {
+                totalDataBlocksAccessed++; // Increment the counter for data blocks accessed
+            }
+            numIndexAccessed++;
+        }
+
+        // If the end of the current leaf node is reached, traverse to the next leaf node
+        if (ptrArr[maxKeys].blockAddress == nullptr) {
+            break; // If there's no next leaf node, break out of the loop
+        }
+        currNode = ptrArr[maxKeys].blockAddress; // Traverse to the next leaf node
+        ptrArr = (pointerBlockPair*)(((NodeHeader*)currNode) + 1);
+        numVotesArr = (float*)(ptrArr + maxKeys + 1);
+        numKeys = *(unsigned int*)currNode;
+    }
+
+    if (output.is_open()) {
+        output << "Total number of data blocks accessed: " << totalDataBlocksAccessed << endl;
+        //output << "===============================================================" << endl;// Output the total data blocks accessed
+    }
+
+    return totalDataBlocksAccessed; // Return the total data blocks accessed
+}
+

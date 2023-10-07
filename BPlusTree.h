@@ -56,6 +56,8 @@ public:
     void printTree(ofstream &output);
     int getMax(float maxVal, float start);
     void* findKeyToDelete(float pointsHome, void* rootNode, ofstream &output);
+    int countDataBlocksAccessed(float pointsHomeStart, float pointsHomeEnd, ofstream &output);
+    //string printTree(ofstream &outputFile);
 };
 
 #endif //PROJECT1_BPLUSTREE_H

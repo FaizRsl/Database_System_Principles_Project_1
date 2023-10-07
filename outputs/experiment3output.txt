@@ -1,4 +1,7 @@
-
+Retrieve movies with 'FG_PCT_HOME' equal to 0.5  
+===============================================================
 Total number of index nodes accessed: 852
-Total count: 848
-Index accessed to leaf: 4
+Total count of index accessed (excluding leaf nodes): 848
+No. of index accessed in leaf: 4
+Total number of data blocks accessed: 787
+===============================================================
