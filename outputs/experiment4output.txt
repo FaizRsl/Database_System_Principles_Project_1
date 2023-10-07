@@ -1,4 +1,4 @@
 
-Total number of index nodes accessed: 1
-Total number of overflow index nodes accessed: 0
-Total number of index + overflow nodes accessed: 1
+Total number of index nodes accessed: 242
+Total count: 238
+Index accessed to leaf: 4
