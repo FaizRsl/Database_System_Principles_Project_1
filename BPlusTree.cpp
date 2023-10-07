@@ -84,6 +84,7 @@ list<pointerBlockPair> BPlusTree::findRecord(float pointsHomeStart, float points
 
     numIndexAccessed = 0;
     numOverflowNodesAccessed = 0;
+    int numBlockAccessed = 0;
 
     //Create a new list called results to return the findings of findRecord
     list<pointerBlockPair> results;
@@ -102,6 +103,7 @@ list<pointerBlockPair> BPlusTree::findRecord(float pointsHomeStart, float points
             }
             results.push_back(ptrArr[i]);
             numIndexAccessed++;
+            numBlockAccessed++;
         }
 
         //End of the current leaf node has been reached, need to traverse to next leaf node
@@ -139,6 +141,7 @@ list<pointerBlockPair> BPlusTree::findRecord(float pointsHomeStart, float points
         output << "Total number of index nodes accessed: " << numIndexAccessed << "\n";
         output << "Total count of index accessed (excluding leaf nodes): " << numIndexAccessed-4 << "\n";
         output << "No. of index accessed in leaf: " << 4 << "\n";
+        output << "Total number of data block accessed: " << numBlockAccessed << "\n";
 //        cout << "\nTotal number of index nodes accessed: " << numIndexAccessed << "\n";
 //        cout << "Total count: " << numIndexAccessed-4 << "\n";
 //        cout << "Index accessed to leaf: " << 4 << "\n";
@@ -907,41 +910,40 @@ void BPlusTree::printTree(ofstream &outputFile) {
     outputFile << "\n===================\n";
 }
 
-int BPlusTree::countDataBlocksAccessed(float pointsHomeStart, float pointsHomeEnd, ofstream &output) {
-    numIndexAccessed = 0;
-    numOverflowNodesAccessed = 0;
 
-    int totalDataBlocksAccessed = 0; // Counter to track the total data blocks accessed
+float BPlusTree::averageValue(float pointsHomeStart, float pointsHomeEnd, ofstream &output) {
+    list<pointerBlockPair> results = findRecord(pointsHomeStart, pointsHomeEnd, output);
+    list<GameData> gameDataList;
 
-    void* currNode = findNode(pointsHomeStart, root, 0, output, false);
-    unsigned int numKeys = *(unsigned int*)currNode;
-    pointerBlockPair* ptrArr = (pointerBlockPair*)(((NodeHeader*)currNode) + 1);
-    float* numVotesArr = (float*)(ptrArr + maxKeys + 1);
+    // Initialize variables for calculating the average
+    float totalPG3_PCT_home = 0.0f; // Initialize the total value of the field
+    int numRecords = 0; // Initialize the count of records within the range
 
-    // Continue iterating while keys are within the specified range
-    while (numVotesArr[0] < pointsHomeEnd) {
-        for (unsigned int i = 0; i < numKeys; i++) {
-            if (numVotesArr[i] >= pointsHomeStart && numVotesArr[i] <= pointsHomeEnd) {
-                totalDataBlocksAccessed++; // Increment the counter for data blocks accessed
+    // Find corresponding GameData records for the results using findCorrespondingData
+    for (const pointerBlockPair& pair : results) {
+        for (const GameData& gameData : gameDataList) {
+            // Use memory addresses to compare
+            if (&gameData == static_cast<GameData*>(pair.blockAddress)) {
+                gameDataList.push_back(gameData);
+                break; // Break to the next pair once a match is found
             }
-            numIndexAccessed++;
         }
-
-        // If the end of the current leaf node is reached, traverse to the next leaf node
-        if (ptrArr[maxKeys].blockAddress == nullptr) {
-            break; // If there's no next leaf node, break out of the loop
-        }
-        currNode = ptrArr[maxKeys].blockAddress; // Traverse to the next leaf node
-        ptrArr = (pointerBlockPair*)(((NodeHeader*)currNode) + 1);
-        numVotesArr = (float*)(ptrArr + maxKeys + 1);
-        numKeys = *(unsigned int*)currNode;
     }
+
+    // Iterate through the matching GameData records and calculate the total and count
+    for (const GameData& gameData : gameDataList) {
+        totalPG3_PCT_home += gameData.FG3_PCT_home;
+        numRecords++;
+    }
+
+    // Calculate the average (avoid division by zero)
+    float averagePG3_PCT_home = (numRecords > 0) ? totalPG3_PCT_home / numRecords : 0.0f;
 
     if (output.is_open()) {
-        output << "Total number of data blocks accessed: " << totalDataBlocksAccessed << endl;
-        //output << "===============================================================" << endl;// Output the total data blocks accessed
+        output << "Average PG3_PCT_home in the specified range: " << averagePG3_PCT_home << "\n";
+        output << "Number of Records: " << numRecords << "\n";
+        output << "Total PG3_PCT_home: " << totalPG3_PCT_home << "\n";
     }
 
-    return totalDataBlocksAccessed; // Return the total data blocks accessed
+    return averagePG3_PCT_home;
 }
-

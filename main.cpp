@@ -78,7 +78,7 @@ int main() {
                 exp1Output << "Size of a record: " << (sizeof(GameData)) << "-Byte" << endl;
                 exp1Output << "Number of records stored in a block: " << ceil((blockSize - sizeof(unsigned int))/ (sizeof(GameData) + sizeof(indexMapping))) << endl;
                 exp1Output << "Number of blocks for storing the data: " << db->numBlocks << endl;
-                exp1Output << "===============================================" << endl;
+                //exp1Output << "===============================================" << endl;
                 exp1Output.close();
 
                 // to read the data from "experiment1output.txt"
@@ -133,8 +133,7 @@ int main() {
                 exp3Output << "Retrieve movies with 'FG_PCT_HOME' equal to 0.5  \n";
                 exp3Output << "===============================================================" << endl;
                 db->bPlusTree->findRecord(0.5, 0.5001, exp3Output);
-                db->bPlusTree->countDataBlocksAccessed(0.5, 0.5001, exp3Output);
-                exp3Output << "===============================================================" << endl;
+                //exp3Output << "===============================================================" << endl;
                 exp3Output.close();
                 exp3Input.open(resultsDir + "experiment3output.txt");
                 if(exp3Input.is_open()){
@@ -154,8 +153,7 @@ int main() {
                 exp4Output << "Retrieve movies with 'FG_PCT_HOME' between 0.6 and 1.0 \n";
                 exp4Output << "======================================================================" << endl;
                 db->bPlusTree->findRecord(0.6, 1.0, exp4Output);
-                db->bPlusTree->countDataBlocksAccessed(0.6, 1.0, exp4Output);
-                exp4Output << "======================================================================" << endl;
+                //exp4Output << "======================================================================" << endl;
                 exp4Output.close();
                 // reading from the txt file for experiment-4
                 exp4Input.open(resultsDir + "experiment4output.txt");

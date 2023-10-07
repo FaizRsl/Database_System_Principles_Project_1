@@ -3,4 +3,3 @@ Number of records: 26552
 Size of a record: 32-Byte
 Number of records stored in a block: 9
 Number of blocks for storing the data: 2951
-===============================================
