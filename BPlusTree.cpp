@@ -3,6 +3,15 @@
 #include <cmath>
 #include <chrono>
 
+/**
+ * @brief Constructs a B+ tree with the specified node size.
+ *
+ * This constructor initializes a B+ tree with the given node size. It sets various
+ * statistics to zero and computes the maximum number of keys that a node can hold
+ * based on the node size.
+ *
+ * @param nodeSize The size (in bytes) of a B+ tree node.
+ */
 BPlusTree::BPlusTree(unsigned int nodeSize) {
     numNodes = 0;
     numOverflowNodes = 0;
@@ -23,6 +32,13 @@ BPlusTree::BPlusTree(unsigned int nodeSize) {
 // Gets a new node from memory to be used as a node in the B+ Tree
 // isOverflow used to determine whether to increment numOverflowNodes or numNodes
 // isLeaf is also assigned for the node based on the input
+/**
+* @brief Creates a new B+ tree node.
+*
+* @param isLeaf Indicates whether the new node is a leaf node.
+* @param isOverflow Indicates whether the new node is an overflow node.
+* @return A pointer to the newly created node.
+*/
 void* BPlusTree::getNewNode(bool isLeaf, bool isOverflow) {
     void* addr = malloc(sizeOfNode);
 
@@ -52,6 +68,14 @@ void* BPlusTree::getNewNode(bool isLeaf, bool isOverflow) {
 
 // Print the contents of a specific index block in the B+ Tree
 // Used for experiments
+// Functions for Experiments/Visualization
+/**
+ * @brief Prints the contents of an index block to the output stream.
+ *
+ * @param node The node to print.
+ * @param output The output file stream for logging.
+ * @return The number of keys printed.
+ */
 int BPlusTree::printIndexBlock(void* node, ofstream &output) {
     int numKeys = *(unsigned int*)node;
     pointerBlockPair* ptrArr = (pointerBlockPair*) (((NodeHeader*) node ) + 1 );
@@ -82,6 +106,14 @@ int BPlusTree::printIndexBlock(void* node, ofstream &output) {
 // This may return multiple pointerBlockPairs due to the possibility of multiple records having same key value of numVotes
 // For querying of single value, set numVotesStart and numVotesEnd to both be the value
 // Calls findNode() to locate the appropiate leaf node
+/**
+* @brief Finds records within a specified range of key values.
+*
+* @param pointsHomeStart The starting key value.
+* @param pointsHomeEnd The ending key value.
+* @param output The output file stream to write results to.
+* @return A list of pointer-block pairs representing the found records.
+*/
 list<pointerBlockPair> BPlusTree::findRecord(float pointsHomeStart, float pointsHomeEnd, ofstream &output) {
     auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -134,7 +166,12 @@ list<pointerBlockPair> BPlusTree::findRecord(float pointsHomeStart, float points
     return results;
 }
 
-
+/**
+ * @brief Gets the maximum key value that is less than or equal to the specified maxVal.
+ * @param maxVal The maximum value to compare against.
+ * @param start The starting index to search from.
+ * @return The index of the maximum key value.
+ */
 int BPlusTree::getMax(float maxVal, float start){
 
     float shiftedValue = maxVal-start;
@@ -150,6 +187,15 @@ int BPlusTree::getMax(float maxVal, float start){
 // Starts from the root node and recursively calls findNode() every time it goes down a level
 // Terminating condition occurs when a leaf node is reached
 // This DOES NOT mean that the key is definitely present in the node, iteration through the node still needs to be done
+/**
+ * @brief Finds the node containing a specific key value within the B+ tree.
+ * @param points_home The key value to search for.
+ * @param node The current node being searched.
+ * @param currHeight The current height in the B+ tree.
+ * @param output The output file stream for logging.
+ * @param willPrint Indicates whether to print debug information.
+ * @return A pointer to the node containing the key.
+ */
 void* BPlusTree::findNode(float points_home , void* node, unsigned int currHeight, ofstream &output, bool willPrint) {
 
     numIndexAccessed++;
@@ -191,11 +237,14 @@ void* BPlusTree::findNode(float points_home , void* node, unsigned int currHeigh
 // Accounts for duplicate keys and creates overflow nodes to hold duplicate keys if required
 // Leaf nodes will only hold unique key values, which may have pointers to overflow nodes if multiple records have the same index
 // Calls splitLeafNode() if number of keys exceeds the maximum number of keys the leaf node can hold
+/**
+ * @brief Inserts a record into the B+ tree.
+ * @param points_home The key value of the record.
+ * @param record The pointer-block pair representing the record.
+ */
 void BPlusTree::insertRecord(float points_home, pointerBlockPair record) {
 
     count++;
-//    cout << "total count: " << count << " , ";
-//    cout << "points_home: " << points_home << endl;
     ofstream dummy;
     void* nodeToInsertAt = findNode(points_home, root, 0, dummy, true);
     int numKeys = *(unsigned int*)nodeToInsertAt;
@@ -238,83 +287,11 @@ void BPlusTree::insertRecord(float points_home, pointerBlockPair record) {
                 }
             }
             temp = points_home + (increment * counter);
-            //i = 0;
-            //counter++;
         }
     }
 
 
     points_home = temp;
-
-
-//    // CASE 1: Duplicate key detected in the B+ tree
-//    for (int i = 0; i <= numKeys -1 ; i++) {
-//        if (points_home == points_homeArr[i]){
-//            // first check if the key alr has a overflow node
-//            void* overflowNode;
-//            pointerBlockPair* ptrArrO;
-//            float* points_homeArrO;
-//            unsigned int* numKeysO;
-//
-//            if (ptrArr[i].recordID == -1) { // if overflowNode already exists, add on to it
-//                overflowNode = ptrArr[i].blockAddress;
-//                ptrArrO = (pointerBlockPair*) (((NodeHeader*) overflowNode ) + 1 );
-//
-//                // Traverse to the last overflow block by following the last pointer
-//                while (ptrArrO[maxKeys].blockAddress != nullptr) {
-//                    overflowNode = ptrArrO[maxKeys].blockAddress;
-//                    ptrArrO = (pointerBlockPair*) (((NodeHeader*) overflowNode ) + 1 );
-//                }
-//
-//                // Check if the last overflowNode has capacity for another duplicate record
-//                numKeysO = (unsigned int*) overflowNode;
-//                int posToInsert = 0;
-//
-//                if (*numKeysO == maxKeys) { // last overflowNode is full, a new overflowNode needs to be created
-//                    void* newOverflowNode = getNewNode(true, true);
-//                    ptrArrO[maxKeys].blockAddress = newOverflowNode; // Link previous overflowNode to newOverflowNode
-//
-//                    // Reset pointer to newOverflowNode for insertion of key later
-//                    ptrArrO = (pointerBlockPair*) (((NodeHeader*) newOverflowNode ) + 1 );
-//                    numKeysO = (unsigned int*) newOverflowNode;
-//                    (*numKeysO) = 1; // newOverflowNode will consist of 1 key
-//                    ptrArrO[maxKeys] = {nullptr, -1}; // Set newOverflowNode to point to nullptr to indicate that it is the last overflowNode
-//
-//                } else { // last overflowNode has enough space; insert key into this overflowNode
-//                    posToInsert = *numKeysO;
-//                    (*numKeysO)++; // increment number of keys in overflowNode
-//                }
-//
-//                // Perform insertion of key into the correct overflowNode
-//                points_homeArrO = (float*) (ptrArrO + maxKeys + 1);
-//                ptrArrO[posToInsert] = record;
-//                points_homeArrO[posToInsert] = points_home;
-//
-//                // Key currently added is the first duplicate, to create an overflow node and link it to the leaf node
-//            } else {
-//                overflowNode = getNewNode(true, true);
-//                ptrArrO = (pointerBlockPair*) (((NodeHeader*) overflowNode ) + 1 );
-//                points_homeArrO = (float*) (ptrArrO + maxKeys + 1);
-//                numKeysO = (unsigned int*) overflowNode;
-//
-//                // set first key-ptr pair of overflow block to point to the existing key and its record
-//                ptrArrO[0] = ptrArr[i];
-//                points_homeArrO[0] = points_homeArr[i];
-//
-//                // set second key-ptr pair of overflow block to point to new (duplicate) key
-//                ptrArrO[1] = record;
-//                points_homeArrO[1] = points_home;
-//
-//                ptrArr[i].blockAddress = overflowNode;
-//                ptrArr[i].recordID = -1;
-//                ptrArrO[maxKeys].blockAddress = nullptr;
-//                ptrArrO[maxKeys].recordID = -1;
-//                (*numKeysO) = 2; // Number of keys in overflowNode = 2 (1 for existing key, 1 for duplicate key)
-//            }
-//            return;
-//        }
-//    }
-
     // CASE 2: Unique key, but number of keys after insertion to node exceeds max number of keys allowed
     if (numKeys == maxKeys){
         splitLeafNode(points_home, record, nodeToInsertAt, ptrArr, points_homeArr);
@@ -335,11 +312,6 @@ void BPlusTree::insertRecord(float points_home, pointerBlockPair record) {
     points_homeArr[i] = points_home;
     ptrArr[i] = record;
     cout << fixed << setprecision(7);
-    /*if(count==26551){
-        for(int i=0; i<count; i++){
-            cout << "Record id for " << i << ": " << ptrArr[i].recordID << endl;
-        }
-    }*/
     (*(unsigned int*)nodeToInsertAt)++; //Increment number of records in leaf node
 }
 
@@ -349,6 +321,13 @@ void BPlusTree::insertRecord(float points_home, pointerBlockPair record) {
 // Initial deleting of a key always starts from a leaf node
 // If merging was performed, deleteKey() may be called again in mergeNodes() for the parent node
 // Function to find the node containing the key to delete
+/**
+ * @brief Finds the node containing a specific key value to delete and returns it.
+ * @param pointsHome The key value to delete.
+ * @param rootNode The root node of the B+ tree.
+ * @param output The output file stream for logging.
+ * @return A pointer to the node containing the key to delete.
+ */
 void* BPlusTree::findKeyToDelete(float pointsHome, void* rootNode, ofstream &output) {
     void* currNode = findNode(pointsHome, root, 0, output, false);
 
@@ -384,6 +363,11 @@ void* BPlusTree::findKeyToDelete(float pointsHome, void* rootNode, ofstream &out
 }
 
 // Function to delete a key
+/**
+ * @brief Deletes a record with a specific key value from the B+ tree.
+ * @param pointsHome The key value of the record to delete.
+ * @param nodeToDeleteFrom The node to delete the record from.
+ */
 void BPlusTree::deleteKey(float pointsHome, void* nodeToDeleteFrom) {
     unsigned int* numKeys = (unsigned int*)nodeToDeleteFrom;
     NodeHeader header = *(NodeHeader*) nodeToDeleteFrom;
@@ -403,7 +387,6 @@ void BPlusTree::deleteKey(float pointsHome, void* nodeToDeleteFrom) {
     // If the key does not exist, handle the case appropriately
     if (!keyExists) {
         // You can log an error or handle this case based on your requirements
-        //cout << "Key not found: " << pointsHome << endl;
         return;
     }
 
@@ -542,6 +525,11 @@ void BPlusTree::deleteKey(float pointsHome, void* nodeToDeleteFrom) {
 // Merges two nodes if number of keys is insufficient from the B+ Tree
 // Merging occurs by keeping the left node, and deleting the right node
 // Is called by deleteKey() if deletion results in nodes with insufficient keys
+/**
+ * @brief Merges two nodes (either leaf or non-leaf) into one node.
+ * @param leftNode The left node to be merged.
+ * @param rightNode The right node to be merged.
+ */
 void BPlusTree::mergeNodes(void* leftNode, void* rightNode) {
 
     pointerBlockPair* ptrArrL = (pointerBlockPair*) (((NodeHeader*) leftNode ) + 1 );
@@ -585,6 +573,14 @@ void BPlusTree::mergeNodes(void* leftNode, void* rightNode) {
 // New node will be to the right of the original node
 // Original node is now the left node
 // Calls updateParentNodeAfterSplit() to update keys in parent node
+/**
+ * @brief Splits a leaf node during record insertion.
+ * @param points_home The key value of the record to insert.
+ * @param record The pointer-block pair representing the record.
+ * @param nodeToSplit The leaf node to split.
+ * @param ptrArr An array of pointer-block pairs.
+ * @param ptsHomeArr An array of key values.
+ */
 void BPlusTree::splitLeafNode(float points_home, pointerBlockPair record, void* nodeToSplit, pointerBlockPair* ptrArr, float* ptsHomeArr) {
 
     void* leftNode = nodeToSplit;
@@ -629,8 +625,6 @@ void BPlusTree::splitLeafNode(float points_home, pointerBlockPair record, void* 
     for (int i = 0; i < numRightKeys; i ++) {
         pointsHomeArrR[i] = tempPointHomeList.front();
         ptrArrR[i] = tempPtrList.front();
-        //ptsHomeArr[i+numLeftKeys] = pointsHomeArrR[i];
-        //ptrArr[i+numLeftKeys] = ptrArrR[i];
         tempPointHomeList.pop_front();
         tempPtrList.pop_front();
     }
@@ -652,6 +646,14 @@ void BPlusTree::splitLeafNode(float points_home, pointerBlockPair record, void* 
 // New node will be to the right of the original node
 // Original node is now the left node
 // Calls updateParentNodeAfterSplit() to update keys in parent node
+/**
+ * @brief Splits a non-leaf node during record insertion.
+ * @param points_home The key value of the record to insert.
+ * @param record The pointer-block pair representing the record.
+ * @param nodeToSplit The non-leaf node to split.
+ * @param ptrArr An array of pointer-block pairs.
+ * @param ptsHomeArr An array of key values.
+ */
 void BPlusTree::splitNonLeafNode(float points_home, pointerBlockPair record, void* nodeToSplit, pointerBlockPair* ptrArr, float* ptsHomeArr) {
 
     void* leftNode = nodeToSplit;
@@ -734,6 +736,12 @@ void BPlusTree::splitNonLeafNode(float points_home, pointerBlockPair record, voi
 // Updates parent node after a split has been occured
 // Is called by either splitLeafNode() or splitNonLeafNode()
 // Can also call splitNonLeafNode() if the parent node ends up having insufficient number of keys
+/**
+ * @brief Updates the parent node after splitting a node.
+ * @param parentNode The parent node.
+ * @param rightNode The right sibling node.
+ * @param newKey The key value to update in the parent node.
+ */
 void BPlusTree::updateParentNodeAfterSplit(void* parentNode, void* rightNode, float newKey) {
 
     //If root node is the node being split, we need to create a new root
@@ -796,6 +804,13 @@ void BPlusTree::updateParentNodeAfterSplit(void* parentNode, void* rightNode, fl
 // Shift all keys forward by one space
 // Called by deleteKey() when borrowing elements
 // Also called by deleteKey() when deleting the first key from the node
+/**
+ * @brief Shifts elements in an array of key values and pointer-block pairs forward.
+ * @param pointsHomeArr An array of key values.
+ * @param ptrArr An array of pointer-block pairs.
+ * @param start The starting index for shifting.
+ * @param isLeaf Indicates whether the elements are in a leaf node.
+ */
 void BPlusTree::shiftElementsForward(float* pointsHomeArr, pointerBlockPair* ptrArr, int start, bool isLeaf) {
 
     if (isLeaf) {
@@ -814,6 +829,13 @@ void BPlusTree::shiftElementsForward(float* pointsHomeArr, pointerBlockPair* ptr
 
 // Shift all keys backward by one space
 // Called by deleteKey() when borrowing elements
+/**
+ * @brief Shifts elements in an array of key values and pointer-block pairs back.
+ * @param pointsHomeArr An array of key values.
+ * @param ptrArr An array of pointer-block pairs.
+ * @param end An array of pointer-block pairs.
+ * @param isLeaf Indicates whether the elements are in a leaf node.
+ */
 void BPlusTree::shiftElementsBack(float* pointsHomeArr, pointerBlockPair* ptrArr, int end, bool isLeaf) {
 
     if (isLeaf) {
@@ -832,6 +854,10 @@ void BPlusTree::shiftElementsBack(float* pointsHomeArr, pointerBlockPair* ptrArr
 
 // Prints the current B+ Tree level by level
 // Shows the keys currently in each node
+/**
+ * @brief Prints the entire B+ tree to the output stream.
+ * @param outputFile The output file stream for logging.
+ */
 void BPlusTree::printTree(ofstream &outputFile) {
     list<void*> queue;
     int nodesInCurLevel = 1;
@@ -871,6 +897,12 @@ void BPlusTree::printTree(ofstream &outputFile) {
 }
 
 
+/**
+ * @brief Performs a linear scan for records within a specified range of key values.
+ * @param pointsHomeStart The starting key value.
+ * @param pointsHomeEnd The ending key value.
+ * @param output The output file stream to write results to.
+ */
 void BPlusTree::linearScan(float pointsHomeStart, float pointsHomeEnd, ofstream &output) {
     // Record the start time
     auto startTime = std::chrono::high_resolution_clock::now();
@@ -897,19 +929,23 @@ void BPlusTree::linearScan(float pointsHomeStart, float pointsHomeEnd, ofstream 
     if (output.is_open()) {
         output << "Running time for Brute Force Linear Scan: "<< elapsedTime << " microseconds \n";
         output << "Total number of data block accessed (during linear scan): " << numDataBlocksAccessed << "\n";
-//        cout << "\nTotal number of index nodes accessed: " << numIndexAccessed << "\n";
-//        cout << "Total count: " << numIndexAccessed-4 << "\n";
-//        cout << "Index accessed to leaf: " << 4 << "\n";
     }
-    //return {numDataBlocksAccessed, elapsedTime};
 }
 
+/**
+ * @brief Gets the root node of the B+ tree.
+ * @return A pointer to the root node.
+ */
 void* BPlusTree::getRoot() {
     return root;
 }
 
 // Define your BPlusTree class and data structures here...
-
+/**
+ * @brief Deletes records with a key value below a specified threshold.
+ * @param threshold The threshold value for record deletion.
+ * @param output The output file stream for logging.
+ */
 void BPlusTree::deleteBelowThreshold(float threshold, ofstream& output) {
     auto start = std::chrono::high_resolution_clock::now(); // Start measuring time
 
@@ -932,20 +968,23 @@ void BPlusTree::deleteBelowThreshold(float threshold, ofstream& output) {
 
     auto end = std::chrono::high_resolution_clock::now(); // Stop measuring time
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    // Print the statistics
-//    output << "Number of nodes in the updated B+ tree: " << numNodesUpdated << std::endl;
-//    output << "Number of levels in the updated B+ tree: " << numLevelsUpdated << std::endl;
-//    output << "Content of the root node of the updated B+ tree (only keys): ";
-//    for (const auto& key : rootKeys) {
-//        output << key << " ";
-//    }
     cout << std::endl;
     cout << "Running time of the process: " << duration.count() << " microseconds" << std::endl;
     cout << "Running time for the Brute Force Linear Scan: " << (duration.count() + 17) << " microseconds" << std::endl;
     cout << "Number of data blocks accessed by linear scan: " << numBlocksAccessedByLinearScan << std::endl;
 }
 
-
+/**
+ * @brief Retrieves the key values of the root node and provides additional statistics.
+ *
+ * This function retrieves the key values of the root node and returns them in a vector.
+ * It also provides statistics including the number of nodes accessed and the number of
+ * levels in the tree after performing a deletion operation.
+ *
+ * @param numNodesAccessed Reference to store the number of nodes accessed during the operation.
+ * @param numLevelsAfterDeletion Reference to store the number of levels after deletion.
+ * @return A vector containing the key values of the root node.
+ */
 std::vector<float> BPlusTree::getRootKeys(int& numNodesAccessed, int& numLevelsAfterDeletion) {
     std::vector<float> keys;
 
@@ -966,6 +1005,12 @@ std::vector<float> BPlusTree::getRootKeys(int& numNodesAccessed, int& numLevelsA
     return keys;
 }
 
+/**
+ * @brief Gets the number of nodes in the B+ tree starting from a given node.
+ * @param node The starting node.
+ * @param isRoot Indicates whether the node is the root of the tree.
+ * @return The total number of nodes.
+ */
 int BPlusTree::getNumNodes(void* node, bool isRoot) {
     if (node == nullptr) {
         return 0;
@@ -987,6 +1032,12 @@ int BPlusTree::getNumNodes(void* node, bool isRoot) {
     return count;
 }
 
+/**
+ * @brief Gets the number of levels in the B+ tree starting from a given node.
+ * @param node The starting node.
+ * @param isRoot Indicates whether the node is the root of the tree.
+ * @return The total number of levels.
+ */
 int BPlusTree::getNumLevels(void* node, bool isRoot) {
     if (node == nullptr) {
         return 0;
@@ -1006,6 +1057,15 @@ int BPlusTree::getNumLevels(void* node, bool isRoot) {
     return levels;
 }
 
+/**
+ * @brief Counts the data blocks accessed during a range query.
+ * This function counts and logs the number of data blocks accessed during a range query
+ * within the specified key value range.
+ * @param pointsHomeStart The starting key value of the range query.
+ * @param pointsHomeEnd The ending key value of the range query.
+ * @param output The output file stream for logging.
+ * @return The total number of data blocks accessed.
+ */
 int BPlusTree::countDataBlocksAccessed(float pointsHomeStart, float pointsHomeEnd, ofstream &output) {
     int count = 0;
 

@@ -6,7 +6,10 @@
 #include "ProjectStructure.h"
 
 using namespace std;
-
+/**
+ * @brief Main function to manage the Database System Principles Project-1.
+ * @return Exit code (0 for successful execution).
+ */
 int main() {
 
     Database* db;

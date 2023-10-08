@@ -3,7 +3,15 @@
 #include <chrono>
 
 using namespace std;
-
+/**
+ * @brief Constructs a new Database object with the specified disk and block sizes.
+ *
+ * This constructor initializes the database with the given disk size (in megabytes),
+ * block size (in bytes), and maximum records per block. It also creates an empty virtual disk
+ * and a B+ tree index structure.
+ * @param diskSize The size of the virtual disk in megabytes (MB).
+ * @param blockSize The size of each block in bytes.
+ */
 Database::Database(unsigned int diskSize, unsigned int blockSize)
 {
     DISK_SIZE = diskSize; // calculated in MB
@@ -15,12 +23,21 @@ Database::Database(unsigned int diskSize, unsigned int blockSize)
     bPlusTree = new BPlusTree(BLOCK_SIZE);
     numBlocks = 0;
 }
-
+/**
+ * @brief Destructor for the Database class.
+ * This destructor frees the allocated memory for the virtual disk and B+ tree index structure.
+ */
 Database::~Database() {
     free(disk);
     free(bPlusTree);
 }
 
+/**
+ * @brief Imports data from an external source into the database.
+ * This method retrieves data records from an external source (e.g., a file) using the
+ * `databaseStorage` class and inserts them into the database. It keeps track of the number
+ * of records inserted.
+ */
 void Database::importData(){
 
     databaseStorage dbStorage;
@@ -38,6 +55,14 @@ void Database::importData(){
 } //close function
 
 // Inserts a movieRecord and updates the B+ Tree
+/**
+ * @brief Inserts a GameData record into the database and updates the B+ Tree index.
+ *
+ * This method inserts a new GameData record into the database and updates the corresponding
+ * B+ Tree index. It manages block allocation, record insertion, and index mapping.
+ *
+ * @param gameData The GameData record to be inserted into the database.
+ */
 void Database::insertRecord(GameData gameData)
 {
     // note that checking if record is already inserted should be done in the B+ tree implementation

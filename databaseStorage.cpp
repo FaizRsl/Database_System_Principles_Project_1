@@ -10,7 +10,14 @@
 #include <cmath>
 
 using namespace std;
-
+/**
+ * @brief Retrieves database records from a file and returns them as a vector of GameData objects.
+ *
+ * This method reads a file containing database records, parses each line, and constructs
+ * GameData objects representing the records. It returns these objects as a vector.
+ *
+ * @return A vector of GameData objects representing database records.
+ */
 std::vector<GameData> databaseStorage::getDatabaseRecord(){
     string pathtofile = std::filesystem::current_path().parent_path().string() + "/games.txt";
     std::ifstream inputFile(pathtofile);
@@ -31,7 +38,6 @@ std::vector<GameData> databaseStorage::getDatabaseRecord(){
     while (std::getline(inputFile, line)) {
         std::istringstream iss(line);
         GameData gameData;
-        //gameData.recordID = count;
         count++;
 
         string dateString;
@@ -58,33 +64,15 @@ std::vector<GameData> databaseStorage::getDatabaseRecord(){
 
         // Use std::mktime to convert std::tm to a time representation (time_t)
         time_t timestamp = std::mktime(&tm);
-        //std::cout << "Date: " << tm.tm_mday << "/" << tm.tm_mon + 1 << "/" << tm.tm_year + 1900 << std::endl;
         gameData.GAME_DATE_EST = timestamp;
 
-        if (!(iss >> gameData.recordID >> gameData.TEAM_ID_home >> gameData.PTS_home >>
+        if (!(iss >> gameData.TEAM_ID_home >> gameData.PTS_home >>
                   gameData.FG_PCT_home >> gameData.FT_PCT_home >> gameData.FG3_PCT_home >>
                   gameData.AST_home >> gameData.REB_home >> gameData.HOME_TEAM_WINS)) {
-            //std::cerr << "Error parsing line: " << line << std::endl;
             continue;
         }
-
-        //gameData.FG_PCT_home = round(gameData.FG_PCT_home * 1000) / 1000.0;
-        //gameData.FT_PCT_home = round(gameData.FT_PCT_home * 1000) / 1000.0;
-        //gameData.FG3_PCT_home = round(gameData.FG3_PCT_home * 1000) / 1000.0;
-
-        /*cout << gameData.recordID << endl;
-        cout << gameData.TEAM_ID_home << endl;
-        cout << gameData.PTS_home << endl;
-        cout << gameData.FG_PCT_home << endl;
-        cout << gameData.FT_PCT_home << endl;
-        cout << gameData.FG3_PCT_home << endl;
-        cout << gameData.AST_home << endl;
-        cout << gameData.REB_home << endl;
-        cout << gameData.HOME_TEAM_WINS << endl;*/
-
         // Handle missing values (nulls) by setting them to 0
         if (iss.fail()) {
-            gameData.recordID = 0.0;
             gameData.FG_PCT_home = 0.0;
             gameData.FT_PCT_home = 0.0;
             gameData.FG3_PCT_home = 0.0;
@@ -97,22 +85,6 @@ std::vector<GameData> databaseStorage::getDatabaseRecord(){
         gameDataList.push_back(gameData);
         //cout << count << endl;
     }
-
-//    cout << "size of short int:" << sizeof(unsigned short int) << endl;
-//    cout << "size of short:" << sizeof(unsigned short) << endl;
-//    cout << "size of time:" << sizeof(time_t) << endl;
-//    cout << "size of int:" << sizeof(unsigned int) << endl;
-//    cout << "size of float:" << sizeof(float) << endl;
-
-
-    // For example, you can access the data for the first game as follows: 
-    // not sure why the below 3 lines weren't in comments. remove if needed
-    //GameData firstGame = gameDataList[0];
-    //std::size_t dataSize = sizeof(firstGame);
-    //std::cout << "Size of GameData object: " << dataSize << " bytes" << std::endl;
-
-    //std::cout << "GAME_DATE_EST: " << firstGame.GAME_DATE_EST << std::endl;
-    //std::cout << "TEAM_ID_home: " << firstGame.TEAM_ID_home << std::endl;
 
     return gameDataList;
 }

@@ -2,6 +2,6 @@ Retrieve movies with 'FG_PCT_HOME' between 0.6 and 1.0
 ======================================================================
 Total number of index nodes accessed: 242
 Total number of data blocks accessed: 238
-Running time for Retrieval Process: 208 microseconds 
-Running time for Brute Force Linear Scan: 231 microseconds 
+Running time for Retrieval Process: 39 microseconds 
+Running time for Brute Force Linear Scan: 44 microseconds 
 Total number of data block accessed (during linear scan): 238

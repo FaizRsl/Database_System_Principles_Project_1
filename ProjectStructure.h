@@ -8,6 +8,9 @@
 using namespace std;
 
 #pragma pack(1)
+/**
+ * @brief Struct to represent game data.
+ */
 struct GameData {
     time_t GAME_DATE_EST; //8
     unsigned int TEAM_ID_home; //4
@@ -20,12 +23,18 @@ struct GameData {
     unsigned short HOME_TEAM_WINS; //2
 };
 
+/**
+ * @brief Struct to represent index mapping.
+ */
 struct indexMapping
 {
     float key;
     int indexOfRecord; // -1 represents a deleted record in block
 };
 
+/**
+ * @brief Struct to represent a pointer-block pair.
+ */
 struct pointerBlockPair // 8 bytes
 {
     void* blockAddress;
@@ -33,6 +42,9 @@ struct pointerBlockPair // 8 bytes
 };
 
 // Used to store relevant header information for a node in the B+ tree
+/**
+ * @brief Struct to store header information for a node in the B+ tree.
+ */
 struct NodeHeader // 14->16 (padded) bytes, multiple of 4
 {
     unsigned int numKeys;
@@ -40,6 +52,9 @@ struct NodeHeader // 14->16 (padded) bytes, multiple of 4
     bool isLeaf;
 };
 
+/**
+ * @brief Struct to store duplicate counts.
+ */
 struct duplicateCounter{
     float keyValue;
     int count;
