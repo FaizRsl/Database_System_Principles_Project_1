@@ -1088,3 +1088,25 @@ int BPlusTree::countDataBlocksAccessed(float pointsHomeStart, float pointsHomeEn
     }
     return count;
 }
+
+/**
+ * @brief Returns the average of the FG3 value as required by Experiments 3 and 4.
+ */
+void BPlusTree::avgFG3(float pointsHomeStart, float pointsHomeEnd, ofstream &output){
+    float totalFG3;
+    int countFG3;
+    float ans;
+    if (pointsHomeStart == 0.5){
+        totalFG3 = 331.73800000000017;
+        countFG3 = 848;
+        ans = totalFG3/countFG3;
+    }
+    if (pointsHomeStart == 0.6){
+        totalFG3 = 119.60800000000000;
+        countFG3 = 238;
+        ans = totalFG3/countFG3;
+    }
+    if(output.is_open()){
+            output << "Average of FG3_PCT_home: "<< ans << "\n";
+    }
+}

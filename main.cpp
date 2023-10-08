@@ -139,6 +139,7 @@ int main() {
                 //db->bPlusTree->findRecord(0.5, 0.5001, exp3Output);
                 //exp3Output << db->bPlusTree->averageValue(0.5, 0.5001, exp3Output);
                 db->bPlusTree->linearScan(0.5, 0.5001, exp3Output);
+                db->bPlusTree->avgFG3(0.5, 0.5001, exp3Output);
                 //exp3Output << "===============================================================" << endl;
                 exp3Output.close();
                 exp3Input.open(resultsDir + "experiment3output.txt");
@@ -160,6 +161,7 @@ int main() {
                 exp4Output << "======================================================================" << endl;
                 //db->bPlusTree->findRecord(0.6, 1.0, exp4Output);
                 db->bPlusTree->linearScan(0.6, 1.0, exp4Output);
+                db->bPlusTree->avgFG3(0.6, 1.0, exp4Output);
                 //exp4Output << "======================================================================" << endl;
                 exp4Output.close();
                 // reading from the txt file for experiment-4
@@ -173,7 +175,7 @@ int main() {
                 }
                 exp4Input.close();
                 break;
-            case 5: //test case for temporary
+            case 5: 
                 cout << "=======================================================================================" << endl;
                 cout << "Experiment 5:";
                 cout << "Delete movies with the attribute “FG_PCT_home” below 0.35 inclusively\n";

@@ -256,6 +256,7 @@ public:
     void linearScan(float pointsHomeStart, float pointsHomeEnd, ofstream &output);
     //string printTree(ofstream &outputFile);
 
+    void avgFG3(float pointsHomeStart, float pointsHomeEnd, ofstream &output);
 
 };
 
