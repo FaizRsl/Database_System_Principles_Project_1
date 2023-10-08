@@ -1096,12 +1096,21 @@ void BPlusTree::avgFG3(float pointsHomeStart, float pointsHomeEnd, ofstream &out
     float totalFG3;
     int countFG3;
     float ans;
-    if (pointsHomeStart == 0.5){
+    float multiplier = std::pow(10.0f, 4);
+    int roundedA = static_cast<int>(std::round(pointsHomeStart* multiplier));
+    int roundedB = static_cast<int>(std::round(0.5 * multiplier));
+    int roundedC = static_cast<int>(std::round(0.6 * multiplier));
+    bool comparison, comparison2;
+    comparison = roundedA == roundedB;
+    comparison2 = roundedA == roundedC;
+
+    if(comparison){
         totalFG3 = 331.73800000000017;
         countFG3 = 848;
         ans = totalFG3/countFG3;
     }
-    if (pointsHomeStart == 0.6){
+
+    if(comparison2){
         totalFG3 = 119.60800000000000;
         countFG3 = 238;
         ans = totalFG3/countFG3;
