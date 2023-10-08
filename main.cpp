@@ -101,9 +101,7 @@ int main() {
                 exp2Output.open(resultsDir + "experiment2output.txt");
                 exp2Output << "===============================================================" << endl;
                 exp2Output << "Parameter n of the B+ Tree: " << db->bPlusTree->maxKeys << "\n";
-                exp2Output << "Number of nodes (excluding overflow): " << db->bPlusTree->numNodes << "\n";
-                exp2Output << "Number of overflow nodes: " << db->bPlusTree->numOverflowNodes << "\n";
-                exp2Output << "Total Number of nodes (including overflow): " << (db->bPlusTree->numNodes + db->bPlusTree->numOverflowNodes) << "\n";
+                exp2Output << "Number of nodes: " << db->bPlusTree->numNodes << "\n";
                 exp2Output << "Number of levels of the B+ tree: " << db->bPlusTree->height+1 << "\n"; // DBMS starts height at 0
                 //exp2Output << "Root: \n";
                 //treeStructure = db->bPlusTree->printTree(exp2Output);
@@ -159,10 +157,8 @@ int main() {
                 exp4Output.open(resultsDir + "experiment4output.txt");
                 exp4Output << "Retrieve movies with 'FG_PCT_HOME' between 0.6 and 1.0 \n";
                 exp4Output << "======================================================================" << endl;
-                //db->bPlusTree->findRecord(0.6, 1.0, exp4Output);
                 db->bPlusTree->linearScan(0.6, 1.0, exp4Output);
                 db->bPlusTree->avgFG3(0.6, 1.0, exp4Output);
-                //exp4Output << "======================================================================" << endl;
                 exp4Output.close();
                 // reading from the txt file for experiment-4
                 exp4Input.open(resultsDir + "experiment4output.txt");
@@ -181,7 +177,6 @@ int main() {
                 cout << "Delete movies with the attribute “FG_PCT_home” below 0.35 inclusively\n";
                 cout << "=======================================================================================" <<endl;
                 //exp5Output.open(resultsDir + "experiment5output.txt");
-                //exp5Output << "=======================================================================================" << endl;
                 //db->bPlusTree->deleteBelowThreshold(0.35, exp5Output);
                 //exp5Output.close();
                 exp5Input.open(resultsDir + "experiment5output.txt");
