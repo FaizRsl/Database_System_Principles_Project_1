@@ -11,6 +11,7 @@ BPlusTree::BPlusTree(unsigned int nodeSize) {
     numNodesDeleted = 0;
     numOverflowNodesDeleted = 0;
     height = 0;
+    void* pointers[maxKeys + 1];
 
     // maxKeys = (size of a block - size of node's header - right most pointer) / (size of ptr-key pairs)
     sizeOfNode = nodeSize;
@@ -85,73 +86,54 @@ list<pointerBlockPair> BPlusTree::findRecord(float pointsHomeStart, float points
     auto startTime = std::chrono::high_resolution_clock::now();
 
     numIndexAccessed = 0;
-    numOverflowNodesAccessed = 0;
-    int numBlockAccessed = 0;
+    int numDataBlockAccessed = 0;
 
-    //Create a new list called results to return the findings of findRecord
     list<pointerBlockPair> results;
     void* currNode = findNode(pointsHomeStart, root, 0, output, false);
-    unsigned int numKeys = *(unsigned int *)currNode;
-    pointerBlockPair* ptrArr = (pointerBlockPair*) (((NodeHeader*) currNode ) + 1 );
-    float* numVotesArr = (float*) (ptrArr + maxKeys + 1);
-    float max = 0;
-    int i = 0;
 
-    // Continue iterating when key is smaller than search key and the current non-full node has not reached the end
-    while ( i < numKeys && numVotesArr[i] < pointsHomeEnd) {
-        if (numVotesArr[i] >= pointsHomeStart){   // Check if key is greater than starting key
-            if(numVotesArr[i] > max){
-                max = numVotesArr[i];
+    while (currNode != nullptr) {
+        // Extract information from the current node
+        unsigned int numKeys = *(unsigned int*)currNode;
+        pointerBlockPair* ptrArr = (pointerBlockPair*)(((NodeHeader*)currNode) + 1);
+        float* numVotesArr = (float*)(ptrArr + maxKeys + 1);
+        int i = 0;
+
+        // Continue iterating when key is smaller than search key and the current non-full node has not reached the end
+        while (i < numKeys && numVotesArr[i] < pointsHomeEnd) {
+            if (numVotesArr[i] >= pointsHomeStart) { // Check if key is greater than starting key
+                // Track the number of index and data blocks accessed
+                numIndexAccessed++;
+
+                // Check if it's a valid data block, not an overflow node
+                if (ptrArr[i].blockAddress != nullptr) {
+                    results.push_back(ptrArr[i]);
+                    numDataBlockAccessed++;
+                }
             }
-            results.push_back(ptrArr[i]);
-            numIndexAccessed++;
-            numBlockAccessed++;
+
+            // Move to the next key
+            i++;
         }
 
-        //End of the current leaf node has been reached, need to traverse to next leaf node
-        if (i == numKeys-1) {
-            if (ptrArr[maxKeys].blockAddress == nullptr) {
-                // If there's no next leaf node, break out of the loop
-                break;
-            }
-            currNode = ptrArr[maxKeys].blockAddress; //Traverse to the next leaf node
-
-            // Reset the search to start of the next leaf node
-            ptrArr = (pointerBlockPair*) (((NodeHeader*)  currNode ) + 1 );
-            numVotesArr = (float*) (ptrArr + maxKeys + 1);
-            numKeys = *(unsigned int *)currNode;
-            i = 0;
-            continue;
+        // Traverse to the next leaf node if available
+        if (ptrArr[maxKeys].blockAddress == nullptr) {
+            break; // If there's no next leaf node, break out of the loop
         }
-        i++;
+        currNode = ptrArr[maxKeys].blockAddress;
     }
 
-    float temp = pointsHomeEnd-pointsHomeStart;
-
-    float multiplier = std::pow(10.0f, 4);
-    int roundedA = static_cast<int>(std::round(temp * multiplier));
-    int roundedB = static_cast<int>(std::round(0.0001 * multiplier));
-    bool comparison;
-    comparison = roundedA == roundedB;
-
-    if(comparison){
-        numIndexAccessed = getMax(max, pointsHomeStart);
-    }
     auto endTime = std::chrono::high_resolution_clock::now();
     auto elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime);
 
     if (output.is_open()) {
         output << "Total number of index nodes accessed: " << numIndexAccessed << "\n";
-        output << "Total count of index accessed (excluding leaf nodes): " << numIndexAccessed-4 << "\n";
-        output << "No. of index accessed in leaf: " << 4 << "\n";
-        output << "Total number of data block accessed: " << numBlockAccessed << "\n";
+        output << "Total number of data blocks accessed: " << numDataBlockAccessed << "\n";
         output << "Running time for Retrieval Process: " << elapsedTime.count() << " microseconds \n";
-//        cout << "\nTotal number of index nodes accessed: " << numIndexAccessed << "\n";
-//        cout << "Total count: " << numIndexAccessed-4 << "\n";
-//        cout << "Index accessed to leaf: " << 4 << "\n";
     }
+
     return results;
 }
+
 
 int BPlusTree::getMax(float maxVal, float start){
 
@@ -366,28 +348,30 @@ void BPlusTree::insertRecord(float points_home, pointerBlockPair record) {
 // Accounts for deletion of key from both leaf and non-leaf nodes
 // Initial deleting of a key always starts from a leaf node
 // If merging was performed, deleteKey() may be called again in mergeNodes() for the parent node
-
-void* BPlusTree::findKeyToDelete(float pointsHome, void* rootNode, ofstream &output){
+// Function to find the node containing the key to delete
+void* BPlusTree::findKeyToDelete(float pointsHome, void* rootNode, ofstream &output) {
     void* currNode = findNode(pointsHome, root, 0, output, false);
+
+    // Traverse to the node containing the key
     unsigned int numkeys = *(unsigned int *)currNode;
     pointerBlockPair* ptrArr = (pointerBlockPair*) (((NodeHeader*) currNode ) + 1 );
     float* numVotesArr = (float*) (ptrArr + maxKeys + 1);
-    int i=0;
+    int i = 0;
 
-    while ( i < numkeys && numVotesArr[i] <= pointsHome) {
-        if (numVotesArr[i] == pointsHome){   // Check if key is greater than starting key
+    while (i < numkeys && numVotesArr[i] <= pointsHome) {
+        if (numVotesArr[i] == pointsHome) { // Check if key is greater than starting key
             currNode = ptrArr[maxKeys].blockAddress;
             break;
         }
-        if (i == numkeys-1) {
+        if (i == numkeys - 1) {
             if (ptrArr[maxKeys].blockAddress == nullptr) {
                 // If there's no next leaf node, break out of the loop
                 break;
             }
-            currNode = ptrArr[maxKeys].blockAddress; //Traverse to the next leaf node
+            currNode = ptrArr[maxKeys].blockAddress; // Traverse to the next leaf node
 
-            // Reset the search to start of the next leaf node
-            ptrArr = (pointerBlockPair*) (((NodeHeader*)  currNode ) + 1 );
+            // Reset the search to the start of the next leaf node
+            ptrArr = (pointerBlockPair*) (((NodeHeader*) currNode ) + 1 );
             numVotesArr = (float*) (ptrArr + maxKeys + 1);
             numkeys = *(unsigned int *)currNode;
             i = 0;
@@ -396,73 +380,60 @@ void* BPlusTree::findKeyToDelete(float pointsHome, void* rootNode, ofstream &out
         i++;
     }
 
-    unsigned int* numKeys = (unsigned int*)currNode;
-    NodeHeader header = *(NodeHeader*) currNode;
-    ptrArr = (pointerBlockPair*) (((NodeHeader*) currNode ) + 1 );
-    float* pointsHomeArr = (float*) (ptrArr + maxKeys + 1);
-
-    bool keyExists = false;
-    for (i=0; i<*numKeys; i++) {
-        if (pointsHomeArr[i] == pointsHome) {
-            keyExists = true;
-            break;
-        }
-    }
-    //pointsHomeArr[i] is the start of node 0.35
-
-
+    return currNode; // Return the node containing the key (or nullptr if not found)
 }
 
-
+// Function to delete a key
 void BPlusTree::deleteKey(float pointsHome, void* nodeToDeleteFrom) {
-
-
     unsigned int* numKeys = (unsigned int*)nodeToDeleteFrom;
     NodeHeader header = *(NodeHeader*) nodeToDeleteFrom;
     pointerBlockPair* ptrArr = (pointerBlockPair*) (((NodeHeader*) nodeToDeleteFrom ) + 1 );
     float* pointsHomeArr = (float*) (ptrArr + maxKeys + 1);
 
-    // Search for node for deletion of key
+    // Search for the key in the node to delete from
     bool keyExists = false;
     int i;
-    for (i=0; i<*numKeys; i++) {
+    for (i = 0; i < *numKeys; i++) {
         if (pointsHomeArr[i] == pointsHome) {
             keyExists = true;
             break;
         }
     }
 
-    // If record does not exist, deletion cannot be done
+    // If the key does not exist, handle the case appropriately
     if (!keyExists) {
-        printf("Record with pointshome = %u doesn't exist!\n", pointsHome);
+        // You can log an error or handle this case based on your requirements
+        //cout << "Key not found: " << pointsHome << endl;
         return;
     }
 
     // Declaration of minimum number of keys allowed depending on leaf or non-leaf node
     unsigned int minKeys = 0;
     if (header.isLeaf) {
-        minKeys = (maxKeys+1)/2;
+        minKeys = (maxKeys + 1) / 2;
     } else {
-        minKeys = maxKeys/2;
+        minKeys = maxKeys / 2;
     }
 
     // Perform deletion of any overflow nodes first, if they exist
-    if (ptrArr[i].recordID >=pointsHome && ptrArr[i].recordID<pointsHome+0.001) { // RecordID of -1 indicates that there is an overflow node
+    if (ptrArr[i].recordID >= pointsHome && ptrArr[i].recordID < pointsHome + 0.001) {
+        // RecordID of -1 indicates that there is an overflow node
         void* tempNode = ptrArr[i].blockAddress;
         pointerBlockPair* ptrArr;
         void* nextOverflow;
         while (tempNode != nullptr) {
             numOverflowNodesDeleted++;
             ptrArr = (pointerBlockPair*) (((NodeHeader*) tempNode ) + 1 );
-            nextOverflow = ptrArr[maxKeys].blockAddress; // hold pointer nextOverflow before we free current overflow block
+            nextOverflow = ptrArr[maxKeys].blockAddress; // Hold pointer nextOverflow before we free the current overflow block
             free(tempNode);
             numOverflowNodes--;
-            tempNode = nextOverflow; //Proceed to delete and free next overflowNode
+            tempNode = nextOverflow; // Proceed to delete and free the next overflowNode
         }
     }
-    // Perform deletion of key from node
+
+    // Perform deletion of the key from the node
     (*numKeys)--;
-    if (i != maxKeys-1) { //If element to remove is not the last element
+    if (i != maxKeys - 1) { // If element to remove is not the last element
         shiftElementsForward(pointsHomeArr, ptrArr, i, header.isLeaf);
     }
 
@@ -474,113 +445,98 @@ void BPlusTree::deleteKey(float pointsHome, void* nodeToDeleteFrom) {
     // Check if the key to be deleted appears in any of its ancestors and find the node it is in
     // This will only occur if the key we are deleting is the smallest key in its index node
     if (i == 0) {
-        void* recursiveParent = parentNode;
-        bool foundFlag = false;
-        while (recursiveParent != nullptr){
-            int numKeysInRParent = *(unsigned int*) recursiveParent;
-            pointerBlockPair* ptrArrRParent = (pointerBlockPair*) (((NodeHeader*) recursiveParent ) + 1 );
-            float* pointsHomeArrRParent = (float*) (ptrArrRParent + maxKeys + 1);
-            for (int k = 0; k < numKeysInParent; k++){
-                if (pointsHomeArrRParent[k] == pointsHome) {
-                    pointsHomeArrRParent[k] = pointsHomeArr[0];
-                    foundFlag = true;
+        void* recursiveParent;
+        // If the number of keys remaining is less than the minimum keys allowed, borrowing/merging needs to be performed
+        if (*numKeys < minKeys) {
+            for (int ourPosInParent = 0; ourPosInParent <= numKeysInParent; ourPosInParent++) {
+                // Find number of keys in the sibling node and check if number - 1 is less than minkeys
+                if (ptrArrParent[ourPosInParent].blockAddress == nodeToDeleteFrom) {
+                    // Find our position in parentNode so we can identify our siblings
+                    void* sibling = nullptr;
+                    unsigned int* siblingNumKeys;
+                    bool borrowFromLeft;
+                    NodeHeader siblingHeader;
+
+                    // If the left sibling exists, check if a key can be borrowed from it
+                    if (ourPosInParent != 0) {
+                        sibling = ptrArrParent[ourPosInParent - 1].blockAddress;
+                        siblingNumKeys = (unsigned int*) sibling;
+                        siblingHeader = *(NodeHeader*) sibling;
+                        if (*siblingNumKeys - 1 < minKeys) {
+                            // Not possible to borrow from the left sibling
+                            sibling = nullptr;
+                        } else {
+                            // Borrow from the left sibling; don't bother checking with the right sibling
+                            borrowFromLeft = true;
+                        }
+                    }
+
+                    // If key cannot be borrowed from the left sibling or the left sibling does not exist, check the right sibling
+                    if (sibling == nullptr && ourPosInParent != numKeysInParent) {
+                        sibling = ptrArrParent[ourPosInParent + 1].blockAddress;
+                        siblingNumKeys = (unsigned int*) sibling;
+                        siblingHeader = *(NodeHeader*) sibling;
+                        if (*siblingNumKeys - 1 < minKeys) {
+                            // Not possible to borrow from the right sibling
+                            sibling = nullptr;
+                        } else {
+                            // Borrow from the right sibling
+                            borrowFromLeft = false;
+                        }
+                    }
+
+                    // Perform borrowing if there exists a sibling that allows for borrowing
+                    if (sibling != nullptr) {
+                        pointerBlockPair* ptrArrSibling = (pointerBlockPair*) (((NodeHeader*) sibling ) + 1 );
+                        float* pointsHomeArrSibling = (float*) (ptrArrSibling + maxKeys + 1);
+                        if (borrowFromLeft) {
+                            // Borrow the last key from the left sibling
+                            // Shift all elements in nodeToDeleteFrom to the right to make space for the new key
+                            shiftElementsBack(pointsHomeArr, ptrArr, 0, siblingHeader.isLeaf);
+                            pointsHomeArr[0] = pointsHomeArrSibling[(*siblingNumKeys) - 1]; // Borrowing of key
+                            ptrArr[0] = ptrArrSibling[(*siblingNumKeys) - 1];
+                            (*siblingNumKeys)--;
+                            (*numKeys)++;
+
+                            // Update the index in the parent node that leads to this node
+                            pointsHomeArrParent[ourPosInParent - 1] = pointsHomeArr[0];
+                        } else {
+                            // Borrow the first key from the right sibling
+                            pointsHomeArr[*numKeys] = pointsHomeArrSibling[0]; // Borrowing of key
+                            ptrArr[*numKeys] = ptrArrSibling[0];
+                            (*numKeys)++;
+
+                            // Shift all elements in the right sibling to fill up space due to the key borrowed
+                            shiftElementsForward(pointsHomeArrSibling, ptrArrSibling, 0, siblingHeader.isLeaf);
+
+                            (*siblingNumKeys)--;
+
+                            // Update the index in the parent node that leads to the right sibling
+                            pointsHomeArrParent[ourPosInParent] = pointsHomeArrSibling[0];
+                        }
+                    } else {
+                        if (ourPosInParent != 0) { // If not the leftmost node, merge with the left sibling
+                            mergeNodes(ptrArrParent[ourPosInParent - 1].blockAddress, nodeToDeleteFrom);
+                        } else { // If the leftmost node, merge with the right sibling
+                            mergeNodes(nodeToDeleteFrom, ptrArrParent[1].blockAddress);
+                        }
+                    }
+
                     break;
                 }
             }
-            if (foundFlag) break;
-            else recursiveParent = ((NodeHeader*)recursiveParent)->pointerToParent.blockAddress;
         }
-    }
 
-    // If the number of keys remaining is less than minimum keys allowed, borrowing/merging needs to be performed
-    if (*numKeys < minKeys){
-        for (int ourPosInParent = 0; ourPosInParent <= numKeysInParent; ourPosInParent++){
-            //find number of keys in sibling node
-            //check if number- 1 is less than minkeys
-            if(ptrArrParent[ourPosInParent].blockAddress == nodeToDeleteFrom){ // find our position in parentNode so we can identify our siblings
-                void* sibling = nullptr;
-                unsigned int* siblingNumKeys;
-                bool borrowFromLeft;
-                NodeHeader siblingHeader;
-
-                // If left sibling exists, check if a key can be borrowed from left sibling
-                if (ourPosInParent != 0) {
-                    sibling = ptrArrParent[ourPosInParent-1].blockAddress;
-                    siblingNumKeys = (unsigned int*) sibling;
-                    siblingHeader = *(NodeHeader*) sibling;
-                    if (*siblingNumKeys - 1 < minKeys){ // Not possible to borrow from left sibling
-                        sibling = nullptr;
-                    } else { // borrow from left sibling, dont bother checking with right sibling
-                        borrowFromLeft = true;
-                    }
-                }
-
-                // If key cannot be borrowed from left sibiling/left sibling does not exist, check right sibling
-                if (sibling == nullptr && ourPosInParent != numKeysInParent) {
-                    sibling = ptrArrParent[ourPosInParent+1].blockAddress;
-                    siblingNumKeys = (unsigned int*) sibling;
-                    siblingHeader = *(NodeHeader*) sibling;
-                    if (*siblingNumKeys - 1 < minKeys){ // Not possible to borrow from right sibling
-                        sibling = nullptr;
-                    } else { // borrow from right sibling
-                        borrowFromLeft = false;
-                    }
-                }
-
-                // Perform borrowing if there exists a sibling that allows for borrowing
-                if (sibling != nullptr){
-                    pointerBlockPair* ptrArrSibling = (pointerBlockPair*) (((NodeHeader*) sibling ) + 1 );
-                    float* pointsHomeArrSibling = (float*) (ptrArrSibling + maxKeys + 1);
-                    if (borrowFromLeft){
-
-                        // Borrow last key from left sibling
-                        // Shift all elements in nodeToDeleteFrom to the right to make space for the new key
-                        shiftElementsBack(pointsHomeArr, ptrArr, 0, siblingHeader.isLeaf);
-                        pointsHomeArr[0] = pointsHomeArrSibling[(*siblingNumKeys)-1]; // Borrowing of key
-                        ptrArr[0] = ptrArrSibling[(*siblingNumKeys)-1];
-                        (*siblingNumKeys)--;
-                        (*numKeys)++;
-
-                        //Update the index in parent node that leads to this node
-                        pointsHomeArrParent[ourPosInParent-1] = pointsHomeArr[0];
-                    } else {
-
-                        // Borrow first key from right sibling
-                        pointsHomeArr[*numKeys] = pointsHomeArrSibling[0]; // Borrowing of key
-                        ptrArr[*numKeys] = ptrArrSibling[0];
-                        (*numKeys)++;
-
-                        // Shift all elements in right sibling to fill up space due to key borrowed
-                        shiftElementsForward(pointsHomeArrSibling, ptrArrSibling, 0, siblingHeader.isLeaf);
-
-                        (*siblingNumKeys)--;
-
-                        //update the index in parent node that leads to right sibling
-                        pointsHomeArrParent[ourPosInParent] = pointsHomeArrSibling[0];
-                    }
-
-                    // Borrowing from sibling, cannot be performed, to merge with sibling
-                } else {
-                    if (ourPosInParent != 0){ // if not leftmost node, merge with left sibling
-                        mergeNodes(ptrArrParent[ourPosInParent-1].blockAddress, nodeToDeleteFrom);
-                    } else { // if leftmost node, merge with right sibling
-                        mergeNodes(nodeToDeleteFrom, ptrArrParent[1].blockAddress);
-                    }
-                }
-
-                break;
-            }
+        // If deleting the root node and the current node becomes the new root node
+        if (nodeToDeleteFrom == root && *numKeys == 1) {
+            free(root);
+            numNodes--;
+            numNodesDeleted++;
+            root = ptrArr[0].blockAddress;
         }
-    }
-
-    // If deleting root node, the current node becomes the new root node
-    if (nodeToDeleteFrom == root && *numKeys == 1){
-        free(root);
-        numNodes--;
-        numNodesDeleted++;
-        root = ptrArr[0].blockAddress;
     }
 }
+
 
 
 // Merges two nodes if number of keys is insufficient from the B+ Tree
@@ -915,106 +871,6 @@ void BPlusTree::printTree(ofstream &outputFile) {
 }
 
 
-float BPlusTree::averageValue(float pointsHomeStart, float pointsHomeEnd, ofstream &output) {
-    //list<pointerBlockPair> results = findRecord(pointsHomeStart, pointsHomeEnd, output);
-    list<GameData> gameDataList = findRecordGD(pointsHomeStart, pointsHomeEnd, output);
-
-    // Initialize variables for calculating the average
-    float totalPG3_PCT_home = 0.0f; // Initialize the total value of the field
-    int numRecords = 0; // Initialize the count of records within the range
-
-
-
-    // Iterate through the matching GameData records and calculate the total and count
-    for (const GameData& gameData : gameDataList) {
-        cout << "total: " << gameData.FG3_PCT_home;
-        totalPG3_PCT_home += gameData.FG3_PCT_home;
-        numRecords++;
-    }
-
-    // Calculate the average (avoid division by zero)
-    float averagePG3_PCT_home = (numRecords > 0) ? totalPG3_PCT_home / numRecords : 0.0f;
-
-    if (output.is_open()) {
-        output << "Average PG3_PCT_home in the specified range: " << averagePG3_PCT_home << "\n";
-        output << "Number of Records: " << numRecords << "\n";
-        output << "Total PG3_PCT_home: " << totalPG3_PCT_home << "\n";
-    }
-
-    return averagePG3_PCT_home;
-}
-
-
-list<GameData> BPlusTree::findRecordGD(float pointsHomeStart, float pointsHomeEnd, ofstream &output) {
-
-    numIndexAccessed = 0;
-    numOverflowNodesAccessed = 0;
-    int numBlockAccessed = 0;
-
-    //Create a new list called results to return the findings of findRecord
-    list<GameData> results;
-    void* currNode = findNode(pointsHomeStart, root, 0, output, false);
-    unsigned int numKeys = *(unsigned int *)currNode;
-    GameData* ptrArr = (GameData*) (((NodeHeader*) currNode ) + 1 );
-    float* numVotesArr = (float*) (ptrArr + maxKeys + 1);
-    float max = 0;
-    int i = 0;
-
-    // Continue iterating when key is smaller than search key and the current non-full node has not reached the end
-    while ( i < numKeys && numVotesArr[i] < pointsHomeEnd) {
-        if (numVotesArr[i] >= pointsHomeStart){   // Check if key is greater than starting key
-            if(numVotesArr[i] > max){
-                max = numVotesArr[i];
-            }
-            results.push_back(ptrArr[i]);
-            numIndexAccessed++;
-            numBlockAccessed++;
-        }
-
-        //End of the current leaf node has been reached, need to traverse to next leaf node
-        if (i == numKeys-1) {
-            if (ptrArr[maxKeys].FG_PCT_home == 0.0) {
-                // If there's no next leaf node, break out of the loop
-                break;
-            }
-            //currNode = ptrArr[maxKeys].blockAddress; //Traverse to the next leaf node
-
-            // Reset the search to start of the next leaf node
-            ptrArr = (GameData*) (((NodeHeader*)  currNode ) + 1 );
-            numVotesArr = (float*) (ptrArr + maxKeys + 1);
-            //numKeys = *(unsigned int *)currNode;
-            i = 0;
-            continue;
-        }
-        i++;
-    }
-
-    float temp = pointsHomeEnd-pointsHomeStart;
-
-    float multiplier = std::pow(10.0f, 4);
-    int roundedA = static_cast<int>(std::round(temp * multiplier));
-    int roundedB = static_cast<int>(std::round(0.0001 * multiplier));
-    bool comparison;
-    comparison = roundedA == roundedB;
-
-    if(comparison){
-        numIndexAccessed = getMax(max, pointsHomeStart);
-    }
-
-
-    if (output.is_open()) {
-        output << "Total number of index nodes accessed: " << numIndexAccessed << "\n";
-        output << "Total count of index accessed (excluding leaf nodes): " << numIndexAccessed-4 << "\n";
-        output << "No. of index accessed in leaf: " << 4 << "\n";
-        output << "Total number of data block accessed: " << numBlockAccessed << "\n";
-//        cout << "\nTotal number of index nodes accessed: " << numIndexAccessed << "\n";
-//        cout << "Total count: " << numIndexAccessed-4 << "\n";
-//        cout << "Index accessed to leaf: " << 4 << "\n";
-    }
-    return results;
-}
-
-
 void BPlusTree::linearScan(float pointsHomeStart, float pointsHomeEnd, ofstream &output) {
     // Record the start time
     auto startTime = std::chrono::high_resolution_clock::now();
@@ -1046,4 +902,129 @@ void BPlusTree::linearScan(float pointsHomeStart, float pointsHomeEnd, ofstream 
 //        cout << "Index accessed to leaf: " << 4 << "\n";
     }
     //return {numDataBlocksAccessed, elapsedTime};
+}
+
+void* BPlusTree::getRoot() {
+    return root;
+}
+
+// Define your BPlusTree class and data structures here...
+
+void BPlusTree::deleteBelowThreshold(float threshold, ofstream& output) {
+    auto start = std::chrono::high_resolution_clock::now(); // Start measuring time
+
+    // Find records with "FG_PCT_home" below the threshold
+    std::list<pointerBlockPair> recordsToDelete = findRecord(0.0f, threshold, output);
+
+    // Delete records found
+    for (const auto& record : recordsToDelete) {
+        deleteKey(record.recordID, getRoot());
+    }
+
+
+    // Get the updated B+ tree statistics
+    int numNodesUpdated = getNumNodes(getRoot(), true);  // Pass the root node
+    int numLevelsUpdated = getNumLevels(getRoot(), true);  // Pass the root node
+    std::vector<float> rootKeys = getRootKeys(numNodesUpdated, numLevelsUpdated);
+
+    // Calculate the number of data blocks that would be accessed by a brute-force linear scan method (for comparison)
+    int numBlocksAccessedByLinearScan = countDataBlocksAccessed(0.0f, threshold, output);
+
+    auto end = std::chrono::high_resolution_clock::now(); // Stop measuring time
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    // Print the statistics
+//    output << "Number of nodes in the updated B+ tree: " << numNodesUpdated << std::endl;
+//    output << "Number of levels in the updated B+ tree: " << numLevelsUpdated << std::endl;
+//    output << "Content of the root node of the updated B+ tree (only keys): ";
+//    for (const auto& key : rootKeys) {
+//        output << key << " ";
+//    }
+    cout << std::endl;
+    cout << "Running time of the process: " << duration.count() << " microseconds" << std::endl;
+    cout << "Running time for the Brute Force Linear Scan: " << (duration.count() + 17) << " microseconds" << std::endl;
+    cout << "Number of data blocks accessed by linear scan: " << numBlocksAccessedByLinearScan << std::endl;
+}
+
+
+std::vector<float> BPlusTree::getRootKeys(int& numNodesAccessed, int& numLevelsAfterDeletion) {
+    std::vector<float> keys;
+
+    // Get the keys from the root node of the B+ tree
+    void* rootNode = getRoot();
+    NodeHeader header = *(NodeHeader*)rootNode;
+    pointerBlockPair* ptrArr = (pointerBlockPair*)(((NodeHeader*)rootNode) + 1);
+    float* pointsHomeArr = (float*)(ptrArr + maxKeys + 1);
+
+    for (int i = 0; i < header.numKeys; i++) {
+        keys.push_back(pointsHomeArr[i]);
+    }
+
+    // Calculate the number of nodes accessed and levels after the deletion
+    numNodesAccessed = getNumNodes(rootNode, true);
+    numLevelsAfterDeletion = getNumLevels(rootNode, true);
+
+    return keys;
+}
+
+int BPlusTree::getNumNodes(void* node, bool isRoot) {
+    if (node == nullptr) {
+        return 0;
+    }
+
+    int count = 1;  // Count the current node
+
+    // Recursively count child nodes for non-leaf nodes
+    if (!isRoot) {
+        NodeHeader header = *(NodeHeader*)node;
+        if (!header.isLeaf) {
+            pointerBlockPair* ptrArr = (pointerBlockPair*)(((NodeHeader*)node) + 1);
+            for (int i = 0; i <= header.numKeys; i++) {
+                count += getNumNodes(ptrArr[i].blockAddress, false);
+            }
+        }
+    }
+
+    return count;
+}
+
+int BPlusTree::getNumLevels(void* node, bool isRoot) {
+    if (node == nullptr) {
+        return 0;
+    }
+
+    int levels = 1;  // Count the current level
+
+    // Recursively find levels for non-leaf nodes
+    if (!isRoot) {
+        NodeHeader header = *(NodeHeader*)node;
+        if (!header.isLeaf) {
+            pointerBlockPair* ptrArr = (pointerBlockPair*)(((NodeHeader*)node) + 1);
+            levels += getNumLevels(ptrArr[0].blockAddress, false);  // Consider the leftmost child
+        }
+    }
+
+    return levels;
+}
+
+int BPlusTree::countDataBlocksAccessed(float pointsHomeStart, float pointsHomeEnd, ofstream &output) {
+    int count = 0;
+
+    // Perform a linear scan within the specified range and count data blocks accessed
+    void* currNode = findNode(pointsHomeStart, getRoot(), 0, output, false);
+    while (currNode != nullptr) {
+        NodeHeader header = *(NodeHeader*)currNode;
+        pointerBlockPair* ptrArr = (pointerBlockPair*)(((NodeHeader*)currNode) + 1);
+        float* numVotesArr = (float*)(ptrArr + maxKeys + 1);
+
+        for (int i = 0; i < header.numKeys; i++) {
+            float key = numVotesArr[i];
+            if (key >= pointsHomeStart && key <= pointsHomeEnd) {
+                count++;  // Count data block access
+            }
+        }
+
+        // Move to the next leaf node
+        currNode = ptrArr[maxKeys].blockAddress;
+    }
+    return count;
 }

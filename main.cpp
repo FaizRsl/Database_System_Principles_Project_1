@@ -25,6 +25,7 @@ int main() {
     ofstream exp4Output;
     ifstream exp4Input;
     ofstream exp5Output;
+    ifstream exp5Input;
     ofstream test;
     ifstream testInput;
     string line;
@@ -170,10 +171,24 @@ int main() {
                 exp4Input.close();
                 break;
             case 5: //test case for temporary
-                cout << "Experiment5:" << endl;
-                exp5Output.open(resultsDir + "experiment5output.txt");
-                db->bPlusTree->findKeyToDelete(0.35,db->bPlusTree->root, exp5Output);
-                exp5Output.close();
+                cout << "=======================================================================================" << endl;
+                cout << "Experiment 5:";
+                cout << "Delete movies with the attribute “FG_PCT_home” below 0.35 inclusively\n";
+                cout << "=======================================================================================" <<endl;
+                //exp5Output.open(resultsDir + "experiment5output.txt");
+                //exp5Output << "=======================================================================================" << endl;
+                //db->bPlusTree->deleteBelowThreshold(0.35, exp5Output);
+                //exp5Output.close();
+                exp5Input.open(resultsDir + "experiment5output.txt");
+                if(exp5Input.is_open()){
+                    while (getline(exp5Input, line)) {
+                        cout << line << endl;
+                    }
+                } else {
+                    cout << "Unable to read the file" << endl;
+                }
+                db->bPlusTree->deleteBelowThreshold(0.35, exp5Output);
+                exp5Input.close();
                 break;
             case 6:
                 cout << "=============================" << "\n";
@@ -187,8 +202,6 @@ int main() {
 
         }
     }
-
-
 
     return 0;
 }

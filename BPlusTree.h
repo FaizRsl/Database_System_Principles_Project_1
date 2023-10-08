@@ -36,7 +36,6 @@ public:
 
     //Retrieval functions
     list<pointerBlockPair> findRecord(float pointsHomeStart, float pointsHomeEnd, ofstream &output);
-    list<GameData> findRecordGD(float pointsHomeStart, float pointsHomeEnd, ofstream &output);
     void* findNode(float points_home, void* node, unsigned int currentHeight, ofstream &output, bool willPrint);
 
     //Functions for inserting a record
@@ -57,10 +56,15 @@ public:
     void printTree(ofstream &output);
     int getMax(float maxVal, float start);
     void* findKeyToDelete(float pointsHome, void* rootNode, ofstream &output);
-    //int countDataBlocksAccessed(float pointsHomeStart, float pointsHomeEnd, ofstream &output);
-    float averageValue(float pointsHomeStart, float pointsHomeEnd, ofstream &output);
     void linearScan(float pointsHomeStart, float pointsHomeEnd, ofstream &output);
     //string printTree(ofstream &outputFile);
+    void deleteBelowThreshold(float threshold, ofstream &output);
+    void* getRoot();
+    std::vector<float> getRootKeys(int& numNodesAccessed, int& numLevelsAfterDeletion);
+    int getNumNodes(void* node, bool isRoot);
+    int getNumLevels(void* node, bool isRoot);
+    int countDataBlocksAccessed(float pointsHomeStart, float pointsHomeEnd, ofstream &output);
+
 };
 
 #endif //PROJECT1_BPLUSTREE_H
